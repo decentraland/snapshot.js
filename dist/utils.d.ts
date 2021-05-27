@@ -13,6 +13,9 @@ export declare const MULTICALL: {
     31: string;
     42: string;
     56: string;
+    70: string;
+    65: string;
+    66: string;
     82: string;
     97: string;
     100: string;

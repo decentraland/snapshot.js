@@ -87,6 +87,7 @@ import { strategy as erc721 } from './erc721';
 import { strategy as apescape } from './apescape';
 import { strategy as liftkitchen } from './liftkitchen';
 import { strategy as decentralandEstateSize } from './decentraland-estate-size';
+import { strategy as brightid } from './brightid';
 declare const _default: {
     balancer: typeof balancer;
     'erc20-received': typeof erc20Received;
@@ -177,5 +178,6 @@ declare const _default: {
     apescape: typeof apescape;
     liftkitchen: typeof liftkitchen;
     'decentraland-estate-size': typeof decentralandEstateSize;
+    brightid: typeof brightid;
 };
 export default _default;

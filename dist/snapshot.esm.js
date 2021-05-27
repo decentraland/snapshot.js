@@ -7,10 +7,10 @@ import { EnumType, jsonToGraphQLQuery } from 'json-to-graphql-query';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { getAddress, isAddress } from '@ethersproject/address';
-import { formatUnits, parseUnits } from '@ethersproject/units';
+import { formatUnits, parseUnits, formatEther } from '@ethersproject/units';
 import namehash from 'eth-ens-namehash';
 import fetch$1 from 'cross-fetch';
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import set from 'lodash.set';
 import contentHash from '@ensdomains/content-hash';
 import { namehash as namehash$1, _TypedDataEncoder } from '@ethersproject/hash';
@@ -949,6 +949,48 @@ var networks = {
 	],
 	explorer: "https://blockscout.com/etc/mainnet"
 },
+	"65": {
+	key: "65",
+	name: "OKExChain Testnet",
+	shortName: "OEC Testnet",
+	chainId: 65,
+	network: "oec testnet",
+	rpc: [
+		"https://exchaintestrpc.okex.org"
+	],
+	ws: [
+		"wss://exchaintestws.okex.org:8443"
+	],
+	explorer: "https://www.oklink.com/okexchain-test"
+},
+	"66": {
+	key: "66",
+	name: "OKExChain Mainnet",
+	shortName: "OEC Mainnet",
+	chainId: 66,
+	network: "oec mainnet",
+	rpc: [
+		"https://exchainrpc.okex.org"
+	],
+	ws: [
+		"wss://exchainws.okex.org:8443"
+	],
+	explorer: "https://www.oklink.com/okexchain"
+},
+	"70": {
+	key: "70",
+	name: "Hoo Smart Chain Mainnet",
+	shortName: "hsc",
+	chainId: 70,
+	network: "Mainnet",
+	rpc: [
+		"https://http-mainnet2.hoosmartchain.com"
+	],
+	ws: [
+		"wss://ws-mainnet2.hoosmartchain.com"
+	],
+	explorer: "https://hscscan.com"
+},
 	"82": {
 	key: "82",
 	name: "Meter Mainnet",
@@ -1152,6 +1194,14 @@ var networks = {
 	wanchain: wanchain
 };
 
+var providers = {};
+function getProvider(network) {
+    var url = networks[network].rpc[0];
+    if (!providers[network])
+        providers[network] = new StaticJsonRpcProvider(url);
+    return providers[network];
+}
+
 var defaultGraphs = {
     '56': 'https://api.thegraph.com/subgraphs/name/apyvision/block-info',
     '137': 'https://api.thegraph.com/subgraphs/name/sameepsi/maticblocks'
@@ -1235,7 +1285,7 @@ function strategy$d(space, network, provider, addresses, options, snapshot) {
                     chainBlocks = _b.sent();
                     for (_i = 0, _a = options.strategies; _i < _a.length; _i++) {
                         strategy_2 = _a[_i];
-                        promises.push(strategies[strategy_2.name](space, strategy_2.network, new JsonRpcProvider(networks[strategy_2.network].rpc[0]), addresses, strategy_2.params, chainBlocks[strategy_2.network]));
+                        promises.push(strategies[strategy_2.name](space, strategy_2.network, getProvider(strategy_2.network), addresses, strategy_2.params, chainBlocks[strategy_2.network]));
                     }
                     return [4 /*yield*/, Promise.all(promises)];
                 case 2:
@@ -7303,6 +7353,7 @@ function xHoprSubgraphQuery(addresses, blockNumber) {
                     query = {
                         accounts: {
                             __args: {
+                                first: 1000,
                                 block: {
                                     number: blockNumber
                                 },
@@ -7366,7 +7417,7 @@ function strategy$1l(space, network, provider, addresses, options, snapshot) {
                     return [4 /*yield*/, xHoprSubgraphQuery(addresses, snapshotXdaiBlock)];
                 case 3:
                     hoprOnXdaiBalance = _b.sent();
-                    hoprOnXdaiScore = addresses.map(function (address) { var _a; return (_a = hoprOnXdaiBalance[address]) !== null && _a !== void 0 ? _a : 0; });
+                    hoprOnXdaiScore = addresses.map(function (address) { var _a; return (_a = hoprOnXdaiBalance[address.toLowerCase()]) !== null && _a !== void 0 ? _a : 0; });
                     return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
                             addresses[i],
                             parseFloat(formatUnits(value.mul(hoprBalanceOfPool[0]).div(poolTotalSupply[0]), 18)) + hoprOnXdaiScore[i] // xHOPR + wxHOPR balance
@@ -7642,9 +7693,9 @@ var DECENTRALAND_MARKETPLACE_SUBGRAPH_URL = {
 };
 function strategy$1p(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
-        var multipler, blockNumber, _a, params, score, hasNext, result, nfts, _i, _b, estate, userAddress;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
+        var multipler, blockNumber, _a, params, score, hasNext, result, nfts, _i, nfts_1, estate, userAddress;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
                     multipler = options.multiplier || 1;
                     if (!(typeof snapshot === 'number')) return [3 /*break*/, 1];
@@ -7652,8 +7703,8 @@ function strategy$1p(space, network, provider, addresses, options, snapshot) {
                     return [3 /*break*/, 3];
                 case 1: return [4 /*yield*/, getBlockNumber(provider)];
                 case 2:
-                    _a = _c.sent();
-                    _c.label = 3;
+                    _a = _b.sent();
+                    _b.label = 3;
                 case 3:
                     blockNumber = _a;
                     params = {
@@ -7678,24 +7729,46 @@ function strategy$1p(space, network, provider, addresses, options, snapshot) {
                     };
                     score = {};
                     hasNext = true;
-                    _c.label = 4;
+                    _b.label = 4;
                 case 4:
                     if (!hasNext) return [3 /*break*/, 6];
                     return [4 /*yield*/, subgraphRequest(DECENTRALAND_MARKETPLACE_SUBGRAPH_URL[network], params)];
                 case 5:
-                    result = _c.sent();
+                    result = _b.sent();
                     nfts = result && result.nfts ? result.nfts : [];
-                    for (_i = 0, _b = result.nfts; _i < _b.length; _i++) {
-                        estate = _b[_i];
+                    for (_i = 0, nfts_1 = nfts; _i < nfts_1.length; _i++) {
+                        estate = nfts_1[_i];
                         userAddress = getAddress(estate.owner.id);
                         score[userAddress] =
-                            (score[userAddress] || 0) +
-                                (estate.searchEstateSize * multipler);
+                            (score[userAddress] || 0) + estate.searchEstateSize * multipler;
                     }
                     params.nfts.__args.skip += params.nfts.__args.first;
                     hasNext = nfts.length === params.nfts.__args.first;
                     return [3 /*break*/, 4];
                 case 6: return [2 /*return*/, score];
+            }
+        });
+    });
+}
+
+var abi$z = [
+    'function isVerifiedUser(address _user) external view returns (bool)'
+];
+function strategy$1q(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, response;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    return [4 /*yield*/, multicall(network, provider, abi$z, addresses.map(function (address) { return [
+                            options.registry,
+                            'isVerifiedUser',
+                            [address]
+                        ]; }), { blockTag: blockTag })];
+                case 1:
+                    response = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [addresses[i], value[0] ? 1 : 0]; }))];
             }
         });
     });
@@ -7790,16 +7863,9 @@ var strategies = {
     'hopr-uni-lp-farm': strategy$1l,
     apescape: strategy$1n,
     liftkitchen: strategy$1o,
-    'decentraland-estate-size': strategy$1p
+    'decentraland-estate-size': strategy$1p,
+    brightid: strategy$1q
 };
-
-var providers = {};
-function getProvider(network) {
-    var url = networks[network].rpc[0];
-    if (!providers[network])
-        providers[network] = new JsonRpcProvider(url);
-    return providers[network];
-}
 
 var supportedCodecs = ['ipns-ns', 'ipfs-ns', 'swarm-ns', 'onion', 'onion3'];
 var REGISTRAR_ABI = [
@@ -8005,6 +8071,9 @@ var MULTICALL = {
     '31': '0x4eeebb5580769ba6d26bfd07be636300076d1831',
     '42': '0x2cc8688c5f75e365aaeeb4ea8d6a480405a48d2a',
     '56': '0x1ee38d535d541c55c9dae27b12edf090c608e6fb',
+    '70': '0xd4b794b89baccb70ef851830099bee4d69f19ebc',
+    '65': '0x23Daae12B7f82b1f0A276cD4f49825DE940B6374',
+    '66': '0x5031F781E294bD918CfCf5aB7fe57196DeAA7Efb',
     '82': '0x579De77CAEd0614e3b158cb738fcD5131B9719Ae',
     '97': '0x8b54247c6BAe96A6ccAFa468ebae96c4D7445e46',
     '100': '0xb5b692a88bdfc81ca69dcb1d924f59f0413a602a',
@@ -8148,7 +8217,7 @@ function getScores$1(space, strategies$1, network, provider, addresses, snapshot
     });
 }
 function validateSchema(schema, data) {
-    var ajv = new Ajv({ allErrors: true });
+    var ajv = new Ajv({ allErrors: true, allowUnionTypes: true, $data: true });
     // @ts-ignore
     addFormats(ajv);
     var validate = ajv.compile(schema);
@@ -9139,6 +9208,7 @@ var ModuleAbi = [
     'function buildQuestion(string proposalId, bytes32[] txHashes) view returns (string)',
     'function executedProposalTransactions(bytes32 questionHash, bytes32 txHash) view returns (bool)',
     'function questionIds(bytes32 questionHash) view returns (bytes32)',
+    'function minimumBond() view returns (uint256)',
     // Write functions
     'function addProposal(string proposalId, bytes32[] txHashes)',
     'function executeProposalWithIndex(string proposalId, bytes32[] txHashes, address to, uint256 value, bytes data, uint8 operation, uint256 txIndex)'
@@ -9146,7 +9216,11 @@ var ModuleAbi = [
 var OracleAbi = [
     // Read functions
     'function resultFor(bytes32 question_id) view returns (bytes32)',
-    'function getFinalizeTS(bytes32 question_id) view returns (uint32)'
+    'function getFinalizeTS(bytes32 question_id) view returns (uint32)',
+    'function getBond(bytes32 question_id) view returns (uint256)',
+    'function getBestAnswer(bytes32 question_id) view returns (uint32)',
+    // Write functions
+    'function submitAnswer(bytes32 question_id, bytes32 answer, uint256 max_previous) external payable'
 ];
 var buildQuestion = function (proposalId, txHashes) { return __awaiter(void 0, void 0, void 0, function () {
     var hashesHash;
@@ -9184,14 +9258,16 @@ var getModuleDetails = function (provider, network, moduleAddress) { return __aw
             case 0: return [4 /*yield*/, multicall(network, provider, ModuleAbi, [
                     [moduleAddress, 'executor'],
                     [moduleAddress, 'oracle'],
-                    [moduleAddress, 'questionCooldown']
+                    [moduleAddress, 'questionCooldown'],
+                    [moduleAddress, 'minimumBond']
                 ])];
             case 1:
                 moduleDetails = _a.sent();
                 return [2 /*return*/, {
                         dao: moduleDetails[0][0],
                         oracle: moduleDetails[1][0],
-                        cooldown: moduleDetails[2][0]
+                        cooldown: moduleDetails[2][0],
+                        minimumBond: moduleDetails[3][0]
                     }];
         }
     });
@@ -9221,6 +9297,34 @@ var checkPossibleExecution = function (provider, network, oracleAddress, questio
             case 4: return [2 /*return*/, {
                     executionApproved: false,
                     finalizedAt: undefined
+                }];
+        }
+    });
+}); };
+var retrieveInfoFromOracle = function (provider, network, oracleAddress, questionId) { return __awaiter(void 0, void 0, void 0, function () {
+    var result, currentBond, answer;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                if (!questionId) return [3 /*break*/, 2];
+                return [4 /*yield*/, multicall(network, provider, OracleAbi, [
+                        [oracleAddress, 'getFinalizeTS', [questionId]],
+                        [oracleAddress, 'getBond', [questionId]],
+                        [oracleAddress, 'getBestAnswer', [questionId]]
+                    ])];
+            case 1:
+                result = _a.sent();
+                currentBond = formatEther(BigNumber$1.from(result[1][0]));
+                answer = BigNumber$1.from(result[2][0]);
+                return [2 /*return*/, {
+                        currentBond: currentBond,
+                        isApproved: answer.eq(BigNumber$1.from(1)),
+                        endTime: BigNumber$1.from(result[0][0]).toNumber()
+                    }];
+            case 2: return [2 /*return*/, {
+                    currentBond: undefined,
+                    isApproved: false,
+                    endTime: undefined
                 }];
         }
     });
@@ -9273,7 +9377,7 @@ var Plugin$2 = /** @class */ (function () {
     };
     Plugin.prototype.getExecutionDetails = function (network, moduleAddress, proposalId, transactions) {
         return __awaiter(this, void 0, void 0, function () {
-            var provider, txHashes, question, questionHash, proposalDetails, moduleDetails, questionState;
+            var provider, txHashes, question, questionHash, proposalDetails, moduleDetails, questionState, infoFromOracle;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -9294,9 +9398,12 @@ var Plugin$2 = /** @class */ (function () {
                         return [4 /*yield*/, checkPossibleExecution(provider, network, moduleDetails.oracle, proposalDetails.questionId)];
                     case 5:
                         questionState = _a.sent();
+                        return [4 /*yield*/, retrieveInfoFromOracle(provider, network, moduleDetails.oracle, proposalDetails.questionId)];
+                    case 6:
+                        infoFromOracle = _a.sent();
                         try {
-                            return [2 /*return*/, __assign(__assign(__assign(__assign(__assign({}, moduleDetails), { proposalId: proposalId }), questionState), proposalDetails), { transactions: transactions,
-                                    txHashes: txHashes })];
+                            return [2 /*return*/, __assign(__assign(__assign(__assign(__assign(__assign({}, moduleDetails), { proposalId: proposalId }), questionState), proposalDetails), { transactions: transactions,
+                                    txHashes: txHashes }), infoFromOracle)];
                         }
                         catch (e) {
                             throw new Error(e);
@@ -9350,6 +9457,39 @@ var Plugin$2 = /** @class */ (function () {
                     case 3:
                         receipt = _a.sent();
                         console.log('[DAO module] executed proposal:', receipt);
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Plugin.prototype.voteForQuestion = function (web3, oracleAddress, questionId, minimumBond, answer) {
+        return __awaiter(this, void 0, void 0, function () {
+            var currentBond, bond, tx, receipt;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, call(web3, OracleAbi, [
+                            oracleAddress,
+                            'getBond',
+                            [questionId]
+                        ])];
+                    case 1:
+                        currentBond = _a.sent();
+                        bond = currentBond.eq(BigNumber$1.from(0))
+                            ? BigNumber$1.from(minimumBond)
+                            : currentBond.mul(2);
+                        return [4 /*yield*/, sendTransaction(web3, oracleAddress, OracleAbi, 'submitAnswer', [
+                                questionId,
+                                "0x000000000000000000000000000000000000000000000000000000000000000" + answer,
+                                bond
+                            ], {
+                                value: bond.toString()
+                            })];
+                    case 2:
+                        tx = _a.sent();
+                        return [4 /*yield*/, tx.wait()];
+                    case 3:
+                        receipt = _a.sent();
+                        console.log('[DAO module] executed vote on oracle:', receipt);
                         return [2 /*return*/];
                 }
             });
@@ -9442,6 +9582,12 @@ var definitions = {
 				title: "terms",
 				format: "uri",
 				maxLength: 128
+			},
+			avatar: {
+				type: "string",
+				title: "avatar",
+				format: "uri",
+				maxLength: 256
 			},
 			location: {
 				type: "string",
@@ -9580,8 +9726,121 @@ var space = {
 	definitions: definitions
 };
 
+var $schema$1 = "http://json-schema.org/draft-07/schema#";
+var $ref$1 = "#/definitions/Proposal";
+var definitions$1 = {
+	Proposal: {
+		title: "Proposal",
+		type: "object",
+		properties: {
+			name: {
+				type: "string",
+				title: "name",
+				minLength: 1,
+				maxLength: 256
+			},
+			body: {
+				type: "string",
+				title: "body",
+				minLength: 1,
+				maxLength: 40000
+			},
+			choices: {
+				type: "array",
+				title: "choices",
+				minItems: 2,
+				maxItems: 32
+			},
+			type: {
+				type: "string",
+				"enum": [
+					"single-choice",
+					"approval"
+				]
+			},
+			snapshot: {
+				type: "number",
+				title: "snapshot"
+			},
+			start: {
+				type: "number",
+				title: "start",
+				minimum: 1000000000,
+				maximum: 2000000000
+			},
+			end: {
+				type: "number",
+				title: "end",
+				minimum: 1000000000,
+				maximum: 2000000000,
+				exclusiveMinimum: {
+					$data: "1/start"
+				}
+			},
+			metadata: {
+				type: "object",
+				title: "metadata"
+			}
+		},
+		required: [
+			"name",
+			"body",
+			"choices",
+			"snapshot",
+			"start",
+			"end"
+		],
+		additionalProperties: false
+	}
+};
+var proposal = {
+	$schema: $schema$1,
+	$ref: $ref$1,
+	definitions: definitions$1
+};
+
+var $schema$2 = "http://json-schema.org/draft-07/schema#";
+var $ref$2 = "#/definitions/Vote";
+var definitions$2 = {
+	Vote: {
+		title: "Vote",
+		type: "object",
+		properties: {
+			proposal: {
+				type: "string",
+				title: "proposal"
+			},
+			choice: {
+				type: [
+					"number",
+					"array",
+					"object",
+					"boolean"
+				],
+				title: "choice"
+			},
+			metadata: {
+				type: "object",
+				title: "metadata"
+			}
+		},
+		required: [
+			"proposal",
+			"choice"
+		],
+		additionalProperties: false
+	}
+};
+var vote = {
+	$schema: $schema$2,
+	$ref: $ref$2,
+	definitions: definitions$2
+};
+
 var schemas = {
-    space: space.definitions.Space
+    space: space.definitions.Space,
+    proposal: proposal.definitions.Proposal,
+    vote: vote.definitions.Vote
 };
 
 var index = {

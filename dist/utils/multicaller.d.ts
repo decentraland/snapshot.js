@@ -1,12 +1,12 @@
-import { JsonRpcProvider } from '@ethersproject/providers';
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
 export default class Multicaller {
     network: string;
-    provider: JsonRpcProvider;
+    provider: StaticJsonRpcProvider;
     abi: any[];
     options: any;
     calls: any[];
     paths: any[];
-    constructor(network: string, provider: JsonRpcProvider, abi: any[], options?: any);
+    constructor(network: string, provider: StaticJsonRpcProvider, abi: any[], options?: any);
     call(path: any, address: any, fn: any, params?: any): Multicaller;
     execute(from?: any): Promise<any>;
 }

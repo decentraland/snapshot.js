@@ -97,6 +97,7 @@ declare const _default: {
         apescape: typeof import("./strategies/apescape").strategy;
         liftkitchen: typeof import("./strategies/liftkitchen").strategy;
         'decentraland-estate-size': typeof import("./strategies/decentraland-estate-size").strategy;
+        brightid: typeof import("./strategies/brightid").strategy;
     };
     schemas: {
         space: {
@@ -118,6 +119,12 @@ declare const _default: {
                     maxLength: number;
                 };
                 terms: {
+                    type: string;
+                    title: string;
+                    format: string;
+                    maxLength: number;
+                };
+                avatar: {
                     type: string;
                     title: string;
                     format: string;
@@ -241,6 +248,79 @@ declare const _default: {
                 };
                 plugins: {
                     type: string;
+                };
+            };
+            required: string[];
+            additionalProperties: boolean;
+        };
+        proposal: {
+            title: string;
+            type: string;
+            properties: {
+                name: {
+                    type: string;
+                    title: string;
+                    minLength: number;
+                    maxLength: number;
+                };
+                body: {
+                    type: string;
+                    title: string;
+                    minLength: number;
+                    maxLength: number;
+                };
+                choices: {
+                    type: string;
+                    title: string;
+                    minItems: number;
+                    maxItems: number;
+                };
+                type: {
+                    type: string;
+                    enum: string[];
+                };
+                snapshot: {
+                    type: string;
+                    title: string;
+                };
+                start: {
+                    type: string;
+                    title: string;
+                    minimum: number;
+                    maximum: number;
+                };
+                end: {
+                    type: string;
+                    title: string;
+                    minimum: number;
+                    maximum: number;
+                    exclusiveMinimum: {
+                        $data: string;
+                    };
+                };
+                metadata: {
+                    type: string;
+                    title: string;
+                };
+            };
+            required: string[];
+            additionalProperties: boolean;
+        };
+        vote: {
+            title: string;
+            type: string;
+            properties: {
+                proposal: {
+                    type: string;
+                    title: string;
+                };
+                choice: {
+                    type: string[];
+                    title: string;
+                };
+                metadata: {
+                    type: string;
+                    title: string;
                 };
             };
             required: string[];

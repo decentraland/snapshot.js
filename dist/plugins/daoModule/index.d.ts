@@ -16,6 +16,9 @@ export interface ProposalDetails {
     nextTxIndex: number | undefined;
     transactions: ModuleTransaction[];
     txHashes: string[];
+    currentBond: string | undefined;
+    isApproved: boolean;
+    endTime: number | undefined;
 }
 export default class Plugin {
     author: string;
@@ -29,4 +32,5 @@ export default class Plugin {
     getExecutionDetails(network: string, moduleAddress: string, proposalId: string, transactions: ModuleTransaction[]): Promise<ProposalDetails>;
     submitProposal(web3: any, moduleAddress: string, proposalId: string, transactions: ModuleTransaction[]): Promise<void>;
     executeProposal(web3: any, moduleAddress: string, proposalId: string, transactions: ModuleTransaction[], transactionIndex: number): Promise<void>;
+    voteForQuestion(web3: any, oracleAddress: string, questionId: string, minimumBond: string, answer: '1' | '0'): Promise<void>;
 }
