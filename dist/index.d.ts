@@ -4,7 +4,8 @@ declare const _default: {
     plugins: {
         aragon: typeof import("./plugins/aragon").default;
         gnosis: typeof import("./plugins/gnosis").default;
-        daoModule: typeof import("./plugins/daoModule").default;
+        safeSnap: typeof import("./plugins/safeSnap").default;
+        poap: typeof import("./plugins/poap").default;
         quorum: typeof import("./plugins/quorum").default;
     };
     strategies: {
@@ -21,6 +22,7 @@ declare const _default: {
         'erc20-balance-of-coeff': typeof import("./strategies/erc20-balance-of-coeff").strategy;
         'erc20-with-balance': typeof import("./strategies/erc20-with-balance").strategy;
         'erc20-balance-of-delegation': typeof import("./strategies/erc20-balance-of-delegation").strategy;
+        'erc20-price': typeof import("./strategies/erc20-price").strategy;
         'balance-of-with-min': typeof import("./strategies/balance-of-with-min").strategy;
         'eth-balance': typeof import("./strategies/eth-balance").strategy;
         'eth-wallet-age': typeof import("./strategies/eth-wallet-age").strategy;
@@ -74,6 +76,7 @@ declare const _default: {
         'pob-hash': typeof import("./strategies/pob-hash").strategy;
         'total-axion-shares': typeof import("./strategies/total-axion-shares").strategy;
         'comp-like-votes': typeof import("./strategies/comp-like-votes").strategy;
+        'governor-alpha': typeof import("./strategies/governor-alpha").strategy;
         pagination: typeof import("./strategies/pagination").strategy;
         'ruler-staked-lp': typeof import("./strategies/ruler-staked-lp").strategy;
         xcover: typeof import("./strategies/xcover").strategy;
@@ -98,6 +101,14 @@ declare const _default: {
         liftkitchen: typeof import("./strategies/liftkitchen").strategy;
         'decentraland-estate-size': typeof import("./strategies/decentraland-estate-size").strategy;
         brightid: typeof import("./strategies/brightid").strategy;
+        'inverse-xinv': typeof import("./strategies/inverse-xinv").strategy;
+        modefi: typeof import("./strategies/modefi").strategy;
+        'iotex-balance': typeof import("./strategies/iotex-balance").strategy;
+        'xrc20-balance-of': typeof import("./strategies/xrc20-balance-of").strategy;
+        spookyswap: typeof import("./strategies/spookyswap").strategy;
+        'rnbw-balance': typeof import("./strategies/rnbw-balance").strategy;
+        'celer-sgn-delegation': typeof import("./strategies/celer-sgn-delegation").strategy;
+        'balancer-delegation': typeof import("./strategies/balancer-delegation").strategy;
     };
     schemas: {
         space: {

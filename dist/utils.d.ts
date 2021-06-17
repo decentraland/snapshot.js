@@ -21,6 +21,7 @@ export declare const MULTICALL: {
     100: string;
     128: string;
     137: string;
+    246: string;
     256: string;
     1287: string;
     1337: string;
@@ -28,6 +29,9 @@ export declare const MULTICALL: {
     wanchain: string;
     250: string;
     499: string;
+    42220: string;
+    4689: string;
+    4690: string;
     1666600000: string;
     1666700000: string;
 };

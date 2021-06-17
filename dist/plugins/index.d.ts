@@ -1,11 +1,13 @@
 import aragon from './aragon';
 import gnosis from './gnosis';
-import daoModule from './daoModule';
+import safeSnap from './safeSnap';
 import quorum from './quorum';
+import poap from './poap';
 declare const _default: {
     aragon: typeof aragon;
     gnosis: typeof gnosis;
-    daoModule: typeof daoModule;
+    safeSnap: typeof safeSnap;
+    poap: typeof poap;
     quorum: typeof quorum;
 };
 export default _default;

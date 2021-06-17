@@ -3,7 +3,7 @@
 var ethereumjsUtil = require('ethereumjs-util');
 var bignumber = require('@ethersproject/bignumber');
 var strings = require('@ethersproject/strings');
-var abi$A = require('@ethersproject/abi');
+var abi$G = require('@ethersproject/abi');
 var contracts = require('@ethersproject/contracts');
 var jsonToGraphqlQuery = require('json-to-graphql-query');
 var Ajv = require('ajv');
@@ -679,7 +679,68 @@ function strategy$9(space, network, provider, addresses, options, snapshot) {
     });
 }
 
+var networksWithPlatforms = {
+    1: 'ethereum',
+    56: 'binance-smart-chain',
+    66: 'okex-chain',
+    88: 'tomochain',
+    100: 'xdai',
+    128: 'huobi-token',
+    137: 'polygon-pos',
+    250: 'fantom',
+    42220: 'celo',
+    43114: 'avalanche',
+    1666600000: 'harmony-shard-0'
+};
 function strategy$a(space, network, provider, addresses, options, snapshot) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, block, platform, address, _c, currency, coingeckoApiURL, coingeckoData, latestPriceFromBlock, score;
+        var _this = this;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    return [4 /*yield*/, provider.getBlock(blockTag)];
+                case 1:
+                    block = _d.sent();
+                    platform = options.platform
+                        ? options.platform
+                        : networksWithPlatforms[network];
+                    address = options.address, _c = options.currency, currency = _c === void 0 ? 'usd' : _c;
+                    coingeckoApiURL = "https://api.coingecko.com/api/v3/coins/" + platform + "/contract/" + address + "/market_chart/range?vs_currency=" + currency + "&from=" + (block.timestamp - 100000) + "&to=" + block.timestamp;
+                    return [4 /*yield*/, fetch(coingeckoApiURL)
+                            .then(function (r) { return __awaiter(_this, void 0, void 0, function () {
+                            var json;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, r.json()];
+                                    case 1:
+                                        json = _a.sent();
+                                        return [2 /*return*/, json];
+                                }
+                            });
+                        }); })
+                            .catch(function (e) {
+                            console.error(e);
+                            throw new Error('Strategy er20-price: coingecko api failed');
+                        })];
+                case 2:
+                    coingeckoData = _d.sent();
+                    latestPriceFromBlock = ((_b = (_a = coingeckoData.prices) === null || _a === void 0 ? void 0 : _a.pop()) === null || _b === void 0 ? void 0 : _b.pop()) || 0;
+                    return [4 /*yield*/, strategy$4(space, network, provider, addresses, options, snapshot)];
+                case 3:
+                    score = _d.sent();
+                    return [2 /*return*/, Object.fromEntries(Object.entries(score).map(function (address) { return [
+                            address[0],
+                            address[1] * latestPriceFromBlock
+                        ]; }))];
+            }
+        });
+    });
+}
+
+function strategy$b(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var score;
         return __generator(this, function (_a) {
@@ -699,7 +760,7 @@ function strategy$a(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$b(space, network, provider, addresses, options, snapshot) {
+function strategy$c(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
@@ -743,7 +804,7 @@ var getJWT = function (dfuseApiKey) { return __awaiter(void 0, void 0, void 0, f
         }
     });
 }); };
-function strategy$c(space, network, provider, addresses, options, snapshot) {
+function strategy$d(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var data, query, dfuseJWT;
         return __generator(this, function (_a) {
@@ -1068,6 +1129,7 @@ var networks = {
 	chainId: 128,
 	network: "Mainnet",
 	rpc: [
+		"https://http-mainnet-node.defibox.com",
 		"https://http-mainnet.hecochain.com"
 	],
 	ws: [
@@ -1077,17 +1139,30 @@ var networks = {
 },
 	"137": {
 	key: "137",
-	name: "Matic Mainnet",
-	shortName: "Matic",
+	name: "Polygon Mainnet",
+	shortName: "Polygon",
 	chainId: 137,
 	network: "mainnet",
 	rpc: [
-		"https://rpc-mainnet.maticvigil.com/v1/1cfd7598e5ba6dcf0b4db58e8be484badc6ea08e"
+		"https://speedy-nodes-nyc.moralis.io/f2963e29bec0de5787da3164/polygon/mainnet/archive",
+		"https://rpc-mainnet.maticvigil.com/v1/1cfd7598e5ba6dcf0b4db58e8be484badc6ea08e",
+		"https://speedy-nodes-nyc.moralis.io/b9aed21e7bb7bdeb35972c9a/polygon/mainnet/archive"
 	],
 	ws: [
 		"wss://ws-mainnet.matic.network"
 	],
-	explorer: ""
+	explorer: "https://polygonscan.com"
+},
+	"246": {
+	key: "246",
+	name: "Energy Web Chain",
+	shortName: "EWC",
+	chainId: 246,
+	network: "mainnet",
+	rpc: [
+		"https://voting-rpc.carbonswap.exchange"
+	],
+	explorer: "https://explorer.energyweb.org"
 },
 	"250": {
 	key: "250",
@@ -1149,6 +1224,28 @@ var networks = {
 	],
 	explorer: "https://cchain.explorer.avax.network"
 },
+	"4689": {
+	key: "4689",
+	name: "IoTeX Mainnet",
+	shortName: "IoTeX",
+	chainId: 4689,
+	network: "mainnet",
+	rpc: [
+		"https://babel-api.mainnet.iotex.io"
+	],
+	explorer: "https://iotexscan.io"
+},
+	"4690": {
+	key: "4690",
+	name: "IoTeX Testnet",
+	shortName: "IoTeX",
+	chainId: 4690,
+	network: "testnet",
+	rpc: [
+		"https://babel-api.testnet.iotex.io"
+	],
+	explorer: "https://testnet.iotexscan.io"
+},
 	"32659": {
 	key: "32659",
 	name: "Fusion Mainnet",
@@ -1162,12 +1259,24 @@ var networks = {
 	],
 	explorer: "https://fsnex.com"
 },
+	"42220": {
+	key: "42220",
+	name: "Celo Mainnet",
+	shortName: "Celo",
+	chainId: 42220,
+	network: "mainnet",
+	rpc: [
+		"https://celo-mainnet--rpc.datahub.figment.io/apikey/e892a66dc36e4d2d98a5d6406d609796/"
+	],
+	explorer: "https://explorer.celo.org"
+},
 	"80001": {
 	key: "80001",
 	name: "Matic Mumbai",
 	chainId: 80001,
 	network: "testnet",
 	rpc: [
+		"https://speedy-nodes-nyc.moralis.io/f2963e29bec0de5787da3164/polygon/mumbai",
 		"https://rpc-mumbai.matic.today"
 	],
 	ws: [
@@ -1285,7 +1394,7 @@ function getChainBlocks(snapshot, provider, options, network) {
         });
     });
 }
-function strategy$d(space, network, provider, addresses, options, snapshot) {
+function strategy$e(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var promises, chainBlocks, _i, _a, strategy_2, results;
         return __generator(this, function (_b) {
@@ -1341,7 +1450,7 @@ var abi$3 = [
         type: 'function'
     }
 ];
-function strategy$e(space, network, provider, addresses, options, snapshot) {
+function strategy$f(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
@@ -1390,7 +1499,7 @@ var abi$4 = [
         type: 'function'
     }
 ];
-function strategy$f(space, network, provider, addresses, options, snapshot) {
+function strategy$g(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
@@ -1431,7 +1540,7 @@ var abi$5 = [
         type: 'function'
     }
 ];
-function strategy$g(space, network, provider, addresses, options, snapshot) {
+function strategy$h(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, _a, score, pricePerFullShare;
         return __generator(this, function (_b) {
@@ -1456,8 +1565,8 @@ function strategy$g(space, network, provider, addresses, options, snapshot) {
 
 var BIG6 = bignumber.BigNumber.from('1000000');
 var BIG18 = bignumber.BigNumber.from('1000000000000000000');
-// 0.0.1: First iteration. FXS Plus FXS in LPs
-// 0.0.2: Adds veFXS
+// 0.0.1: FXS Plus FXS in LPs
+// 0.0.2: Adds veFXS and removes outdated SushiSwap LPs
 var DECIMALS = 18;
 var abi$6 = [
     {
@@ -1552,9 +1661,9 @@ var chunk = function (arr, size) {
         return arr.slice(i * size, i * size + size);
     });
 };
-function strategy$h(space, network, provider, addresses, options, snapshot) {
+function strategy$i(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
-        var blockTag, fxsQuery, vefxsQuery, freeUniLPFraxFxsQuery, farmingUniLPFraxFxsQuery, freeSushiLPFraxFxsQuery, farmingSushiLPFraxFxsQuery, freeSushiLPFxsWethQuery, farmingSushiLPFxsWethQuery, response, uniLPFraxFxs_token0, uniLPFraxFxs_getReserves, uniLPFraxFxs_totalSupply, sushiLPFraxFxs_token0, sushiLPFraxFxs_getReserves, sushiLPFraxFxs_totalSupply, sushiLPFxsWeth_token0, sushiLPFxsWeth_getReserves, sushiLPFxsWeth_totalSupply, uniLPFraxFxs_fxs_per_LP_E18, uni_FraxFxs_reservesFXS_E0, uni_FraxFxs_totalSupply_E0, sushiLPFraxFxs_fxs_per_LP_E18, sushi_FraxFxs_reservesFXS_E0, sushi_FraxFxs_totalSupply_E0, sushiLPFxsWeth_fxs_per_LP_E18, sushi_FxsWeth_reservesFXS_E0, sushi_FxsWeth_totalSupply_E0, responseClean, chunks, fxsBalances, vefxsBalances, freeUniFraxFxsBalances, farmUniFraxFxsBalances, freeSushiFraxFxsBalances, farmSushiFraxFxsBalances, freeSushiFxsWethBalances, farmSushiFxsWethBalances;
+        var blockTag, fxsQuery, vefxsQuery, freeUniLPFraxFxsQuery, farmingUniLPFraxFxsQuery, response, uniLPFraxFxs_token0, uniLPFraxFxs_getReserves, uniLPFraxFxs_totalSupply, uniLPFraxFxs_fxs_per_LP_E18, uni_FraxFxs_reservesFXS_E0, uni_FraxFxs_totalSupply_E0, responseClean, chunks, fxsBalances, vefxsBalances, freeUniFraxFxsBalances, farmUniFraxFxsBalances;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -1579,50 +1688,18 @@ function strategy$h(space, network, provider, addresses, options, snapshot) {
                         'boostedBalanceOf',
                         [address]
                     ]; });
-                    freeSushiLPFraxFxsQuery = addresses.map(function (address) { return [
-                        options.SUSHI_LP_FRAX_FXS,
-                        'balanceOf',
-                        [address]
-                    ]; });
-                    farmingSushiLPFraxFxsQuery = addresses.map(function (address) { return [
-                        options.FARMING_SUSHI_LP_FRAX_FXS,
-                        'boostedBalanceOf',
-                        [address]
-                    ]; });
-                    freeSushiLPFxsWethQuery = addresses.map(function (address) { return [
-                        options.SUSHI_LP_FXS_WETH,
-                        'balanceOf',
-                        [address]
-                    ]; });
-                    farmingSushiLPFxsWethQuery = addresses.map(function (address) { return [
-                        options.FARMING_SUSHI_LP_FXS_WETH,
-                        'boostedBalanceOf',
-                        [address]
-                    ]; });
                     return [4 /*yield*/, multicall(network, provider, abi$6, __spreadArrays([
                             // Get 1inch LP OPIUM-ETH balance of OPIUM
                             // [options.OPIUM, 'balanceOf', [options.LP_1INCH_OPIUM_ETH]],
                             [options.UNI_LP_FRAX_FXS, 'token0'],
                             [options.UNI_LP_FRAX_FXS, 'getReserves'],
-                            [options.UNI_LP_FRAX_FXS, 'totalSupply'],
-                            [options.SUSHI_LP_FRAX_FXS, 'token0'],
-                            [options.SUSHI_LP_FRAX_FXS, 'getReserves'],
-                            [options.SUSHI_LP_FRAX_FXS, 'totalSupply'],
-                            [options.SUSHI_LP_FXS_WETH, 'token0'],
-                            [options.SUSHI_LP_FXS_WETH, 'getReserves'],
-                            [options.SUSHI_LP_FXS_WETH, 'totalSupply']
-                        ], fxsQuery, vefxsQuery, freeUniLPFraxFxsQuery, farmingUniLPFraxFxsQuery, freeSushiLPFraxFxsQuery, farmingSushiLPFraxFxsQuery, freeSushiLPFxsWethQuery, farmingSushiLPFxsWethQuery), { blockTag: blockTag })];
+                            [options.UNI_LP_FRAX_FXS, 'totalSupply']
+                        ], fxsQuery, vefxsQuery, freeUniLPFraxFxsQuery, farmingUniLPFraxFxsQuery), { blockTag: blockTag })];
                 case 1:
                     response = _a.sent();
                     uniLPFraxFxs_token0 = response[0];
                     uniLPFraxFxs_getReserves = response[1];
                     uniLPFraxFxs_totalSupply = response[2];
-                    sushiLPFraxFxs_token0 = response[3];
-                    sushiLPFraxFxs_getReserves = response[4];
-                    sushiLPFraxFxs_totalSupply = response[5];
-                    sushiLPFxsWeth_token0 = response[6];
-                    sushiLPFxsWeth_getReserves = response[7];
-                    sushiLPFxsWeth_totalSupply = response[8];
                     if (uniLPFraxFxs_token0[0] == options.FXS)
                         uni_FraxFxs_reservesFXS_E0 = uniLPFraxFxs_getReserves[0];
                     else
@@ -1631,32 +1708,12 @@ function strategy$h(space, network, provider, addresses, options, snapshot) {
                     uniLPFraxFxs_fxs_per_LP_E18 = uni_FraxFxs_reservesFXS_E0
                         .mul(BIG18)
                         .div(uni_FraxFxs_totalSupply_E0);
-                    if (sushiLPFraxFxs_token0[0] == options.FXS)
-                        sushi_FraxFxs_reservesFXS_E0 = sushiLPFraxFxs_getReserves[0];
-                    else
-                        sushi_FraxFxs_reservesFXS_E0 = sushiLPFraxFxs_getReserves[1];
-                    sushi_FraxFxs_totalSupply_E0 = sushiLPFraxFxs_totalSupply[0];
-                    sushiLPFraxFxs_fxs_per_LP_E18 = sushi_FraxFxs_reservesFXS_E0
-                        .mul(BIG18)
-                        .div(sushi_FraxFxs_totalSupply_E0);
-                    if (sushiLPFxsWeth_token0[0] == options.FXS)
-                        sushi_FxsWeth_reservesFXS_E0 = sushiLPFxsWeth_getReserves[0];
-                    else
-                        sushi_FxsWeth_reservesFXS_E0 = sushiLPFxsWeth_getReserves[1];
-                    sushi_FxsWeth_totalSupply_E0 = sushiLPFxsWeth_totalSupply[0];
-                    sushiLPFxsWeth_fxs_per_LP_E18 = sushi_FxsWeth_reservesFXS_E0
-                        .mul(BIG18)
-                        .div(sushi_FxsWeth_totalSupply_E0);
-                    responseClean = response.slice(9, response.length);
+                    responseClean = response.slice(3, response.length);
                     chunks = chunk(responseClean, addresses.length);
                     fxsBalances = chunks[0];
                     vefxsBalances = chunks[1];
                     freeUniFraxFxsBalances = chunks[2];
                     farmUniFraxFxsBalances = chunks[3];
-                    freeSushiFraxFxsBalances = chunks[4];
-                    farmSushiFraxFxsBalances = chunks[5];
-                    freeSushiFxsWethBalances = chunks[6];
-                    farmSushiFxsWethBalances = chunks[7];
                     return [2 /*return*/, Object.fromEntries(Array(addresses.length)
                             .fill('x')
                             .map(function (_, i) {
@@ -1664,28 +1721,17 @@ function strategy$h(space, network, provider, addresses, options, snapshot) {
                             var vefxs = vefxsBalances[i][0];
                             var free_uni_frax_fxs = freeUniFraxFxsBalances[i][0];
                             var farm_uni_frax_fxs = farmUniFraxFxsBalances[i][0];
-                            var free_sushi_frax_fxs = freeSushiFraxFxsBalances[i][0];
-                            var farm_sushi_frax_fxs = farmSushiFraxFxsBalances[i][0];
-                            var free_sushi_fxs_weth = freeSushiFxsWethBalances[i][0];
-                            var farm_sushi_fxs_weth = farmSushiFxsWethBalances[i][0];
+                            // Print statements
                             // console.log(`==================${addresses[i]}==================`);
                             // console.log("Free FXS: ", free_fxs.div(BIG18).toString());
                             // console.log("veFXS: ", vefxs.div(BIG18).toString());
                             // console.log("Free Uni FRAX/FXS LP: ", free_uni_frax_fxs.div(BIG18).toString());
                             // console.log("Farmed Uni FRAX/FXS LP [boosted]: ", farm_uni_frax_fxs.div(BIG18).toString());
-                            // console.log("Free Sushi FRAX/FXS LP: ", free_sushi_frax_fxs.div(BIG18).toString());
-                            // console.log("Farmed Sushi FRAX/FXS LP [boosted]: ", farm_sushi_frax_fxs.div(BIG18).toString());
-                            // console.log("Free Sushi FXS/WETH: ", free_sushi_fxs_weth.div(BIG18).toString());
-                            // console.log("Farmed Sushi FXS/WETH [boosted]: ", farm_sushi_fxs_weth.div(BIG18).toString());
                             // console.log("------");
                             // console.log("E18");
                             // console.log("FXS per Uni FRAX/FXS LP E18: ", uniLPFraxFxs_fxs_per_LP_E18.toString());
-                            // console.log("FXS per Sushi FRAX/FXS LP E18: ", sushiLPFraxFxs_fxs_per_LP_E18.toString());
-                            // console.log("FXS per Sushi FXS/WETH LP E18: ", sushiLPFxsWeth_fxs_per_LP_E18.toString());
                             // console.log("E0");
                             // console.log("FXS per Uni FRAX/FXS LP E0: ", uniLPFraxFxs_fxs_per_LP_E18.div(BIG18).toString());
-                            // console.log("FXS per Sushi FRAX/FXS LP E0: ", sushiLPFraxFxs_fxs_per_LP_E18.div(BIG18).toString());
-                            // console.log("FXS per Sushi FXS/WETH LP E0: ", sushiLPFxsWeth_fxs_per_LP_E18.div(BIG18).toString());
                             // console.log(``);
                             return [
                                 addresses[i],
@@ -1693,18 +1739,6 @@ function strategy$h(space, network, provider, addresses, options, snapshot) {
                                     .add(vefxs)
                                     .add(free_uni_frax_fxs.mul(uniLPFraxFxs_fxs_per_LP_E18).div(BIG18)) // FXS share in free Uni FRAX/FXS LP
                                     .add(farm_uni_frax_fxs.mul(uniLPFraxFxs_fxs_per_LP_E18).div(BIG18)) // FXS share in farmed Uni FRAX/FXS LP [boosted]
-                                    .add(free_sushi_frax_fxs
-                                    .mul(sushiLPFraxFxs_fxs_per_LP_E18)
-                                    .div(BIG18)) // FXS share in free Sushi FRAX/FXS LP
-                                    .add(farm_sushi_frax_fxs
-                                    .mul(sushiLPFraxFxs_fxs_per_LP_E18)
-                                    .div(BIG18)) // FXS share in farmed Sushi FRAX/FXS LP [boosted]
-                                    .add(free_sushi_fxs_weth
-                                    .mul(sushiLPFxsWeth_fxs_per_LP_E18)
-                                    .div(BIG18)) // FXS share in free Sushi FXS/WETH LP
-                                    .add(farm_sushi_fxs_weth
-                                    .mul(sushiLPFxsWeth_fxs_per_LP_E18)
-                                    .div(BIG18)) // FXS share in farmed Sushi FXS/WETH LP [boosted]
                                     .toString(), DECIMALS))
                             ];
                         }))];
@@ -1791,7 +1825,7 @@ var abi$7 = [
         type: 'function'
     }
 ];
-function strategy$i(space, network, provider, addresses, options, snapshot) {
+function strategy$j(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, memberAddresses, response;
         return __generator(this, function (_a) {
@@ -1824,7 +1858,7 @@ function strategy$i(space, network, provider, addresses, options, snapshot) {
 var UNISWAP_SUBGRAPH_URL = {
     '1': 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2'
 };
-function strategy$j(_space, network, _provider, addresses, options, snapshot) {
+function strategy$k(_space, network, _provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var params, tokenAddress, result, score;
         return __generator(this, function (_a) {
@@ -1899,7 +1933,7 @@ function strategy$j(_space, network, _provider, addresses, options, snapshot) {
 var FLASHSTAKE_SUBGRAPH_URL = {
     '1': 'https://api.thegraph.com/subgraphs/name/blockzerohello/flash-stake-stats-v2-subgraph'
 };
-function strategy$k(_space, network, _provider, addresses, options, snapshot) {
+function strategy$l(_space, network, _provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var params, params2, result, stakesResult, score;
         return __generator(this, function (_a) {
@@ -2042,7 +2076,7 @@ var masterChefAbi = [
     }
 ];
 var masterChefContractAddress = '0x73feaa1eE314F8c655E354234017bE2193C9E24E';
-function strategy$l(space, network, provider, addresses, options, snapshot) {
+function strategy$m(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, score, masterBalances, sousBalances;
         return __generator(this, function (_a) {
@@ -2089,7 +2123,7 @@ var quadraticWeighting = function (value) {
     var scaledValue = value * 1e5;
     return Math.sqrt(scaledValue);
 };
-function strategy$m(_space, _network, _provider, addresses, _, snapshot) {
+function strategy$n(_space, _network, _provider, addresses, _, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var params, result, score;
         return __generator(this, function (_a) {
@@ -2170,7 +2204,7 @@ var abi$8 = [
         type: 'function'
     }
 ];
-function strategy$n(space, network, provider, addresses, options, snapshot) {
+function strategy$o(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, oldBlockTag, _a, balanceOfCalls, borrowBalanceCalls, calls, _b, response, balancesOldResponse, balancesNowResponse, borrowsNowResponse, resultData, i, noBorrow, balanceNow, balanceOld;
         return __generator(this, function (_c) {
@@ -2360,7 +2394,7 @@ var abi$9 = [
 ];
 var CREAM_VOTING_POWER = '0xb146BF59f30a54750209EF529a766D952720D0f9';
 var CREAM_VOTING_POWER_DEPLOY_BLOCK = 12315028;
-function strategy$o(space, network, provider, addresses, options, snapshot) {
+function strategy$p(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var snapshotBlock, _a, snapshotBlocks, i, blocksPerPeriod, blockTag, scores, averageScore;
         return __generator(this, function (_b) {
@@ -2546,7 +2580,7 @@ var abi$a = [
         type: 'function'
     }
 ];
-function strategy$p(space, network, provider, addresses, options, snapshot) {
+function strategy$q(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, daoQuery, lpQuery, response, uniswapESD, uniswapTotalSupply, daoBalances, lpBalances;
         return __generator(this, function (_a) {
@@ -2588,7 +2622,7 @@ function strategy$p(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$q(space, network, provider, addresses, options, snapshot) {
+function strategy$r(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var delegations, score;
         return __generator(this, function (_a) {
@@ -2599,7 +2633,7 @@ function strategy$q(space, network, provider, addresses, options, snapshot) {
                     if (Object.keys(delegations).length === 0)
                         return [2 /*return*/, {}];
                     console.debug('Delegations', delegations);
-                    return [4 /*yield*/, strategy$p(space, network, provider, Object.values(delegations).reduce(function (a, b) {
+                    return [4 /*yield*/, strategy$q(space, network, provider, Object.values(delegations).reduce(function (a, b) {
                             return a.concat(b);
                         }), options, snapshot)];
                 case 2:
@@ -2654,7 +2688,7 @@ var tokenAbi = [
         type: 'function'
     }
 ];
-function strategy$r(_space, network, provider, addresses, options, snapshot) {
+function strategy$s(_space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, res, totalSupply, tokenBalanceInUni, tokensPerUni, response;
         return __generator(this, function (_a) {
@@ -2721,7 +2755,7 @@ var chunk$1 = function (arr, size) {
         return arr.slice(i * size, i * size + size);
     });
 };
-function strategy$s(space, network, provider, addresses, options, snapshot) {
+function strategy$t(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, doughv1Query, doughv2Query, eDOUGHQuery, stakedDoughQuery, lpDoughQuery, response, doughv2BPT, doughv2BptTotalSupply, responseClean, chunks, doughv1Balances, doughv2Balances, eDOUGHBalances, stakedDoughBalances, lpDoughBalances;
         return __generator(this, function (_a) {
@@ -2788,7 +2822,7 @@ function strategy$s(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$t() {
+function strategy$u() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
@@ -2863,7 +2897,7 @@ function strategy$t() {
     });
 }
 
-function strategy$u() {
+function strategy$v() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
@@ -2989,7 +3023,7 @@ var ethCharities = [
     ['Run2Rescue.org', '0xd17bcbFa6De9E3741aa43Ed32e64696F6a9FA996'],
     ['Archive.org', '0xFA8E3920daF271daB92Be9B87d9998DDd94FEF08']
 ];
-function strategy$v() {
+function strategy$w() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
@@ -2999,7 +3033,7 @@ function strategy$v() {
         return __generator(this, function (_b) {
             space = args[0], network = args[1], provider = args[2], addresses = args[3], options = args[4], snapshot = args[5];
             _a = options.coeff, coeff = _a === void 0 ? 100 : _a;
-            return [2 /*return*/, strategy$t(space, network, provider, addresses, {
+            return [2 /*return*/, strategy$u(space, network, provider, addresses, {
                     receivingAddresses: ethCharities.map(function (_a) {
                         var name = _a[0], address = _a[1];
                         return address;
@@ -3156,7 +3190,7 @@ function getEasyStakingParams(snapshot) {
         });
     });
 }
-function strategy$w(space, network, provider, addresses, options, snapshot) {
+function strategy$x(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, easyStakingDeposits, _b, sigmoidParameters, totalSupplyFactor, totalStaked, block, totalSupply, result;
         return __generator(this, function (_c) {
@@ -3243,7 +3277,7 @@ var getXdaiBlockNumber = function (timestamp) { return __awaiter(void 0, void 0,
                 .then(function (r) { return Number(r.result.blockNumber); })];
     });
 }); };
-function strategy$x(space, network, provider, addresses, options, snapshot) {
+function strategy$y(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var xdaiSnapshot, timestamp, users, result;
         return __generator(this, function (_a) {
@@ -3282,23 +3316,23 @@ function strategy$x(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$y(space, network, provider, addresses, options, snapshot) {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            return [2 /*return*/, strategy$x(space, network, provider, addresses, __assign(__assign({}, options), { userType: 'stakers' }), snapshot)];
-        });
-    });
-}
-
 function strategy$z(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            return [2 /*return*/, strategy$x(space, network, provider, addresses, __assign(__assign({}, options), { userType: 'holders' }), snapshot)];
+            return [2 /*return*/, strategy$y(space, network, provider, addresses, __assign(__assign({}, options), { userType: 'stakers' }), snapshot)];
         });
     });
 }
 
 function strategy$A(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            return [2 /*return*/, strategy$y(space, network, provider, addresses, __assign(__assign({}, options), { userType: 'holders' }), snapshot)];
+        });
+    });
+}
+
+function strategy$B(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var delegations, delegationsArray, erc20Balances, easyStakingBalances, posdaoStakingBalances, erc20BalancesOnXdai;
         return __generator(this, function (_a) {
@@ -3313,13 +3347,13 @@ function strategy$A(space, network, provider, addresses, options, snapshot) {
                     return [4 /*yield*/, strategy$4(space, network, provider, delegationsArray, options, snapshot)];
                 case 2:
                     erc20Balances = _a.sent();
-                    return [4 /*yield*/, strategy$w(space, network, provider, delegationsArray, options, snapshot)];
+                    return [4 /*yield*/, strategy$x(space, network, provider, delegationsArray, options, snapshot)];
                 case 3:
                     easyStakingBalances = _a.sent();
-                    return [4 /*yield*/, strategy$y(space, network, provider, delegationsArray, options, snapshot)];
+                    return [4 /*yield*/, strategy$z(space, network, provider, delegationsArray, options, snapshot)];
                 case 4:
                     posdaoStakingBalances = _a.sent();
-                    return [4 /*yield*/, strategy$z(space, network, provider, delegationsArray, options, snapshot)];
+                    return [4 /*yield*/, strategy$A(space, network, provider, delegationsArray, options, snapshot)];
                 case 5:
                     erc20BalancesOnXdai = _a.sent();
                     console.debug('Delegators ERC20 balances', erc20Balances);
@@ -3375,7 +3409,7 @@ var abi$c = [
         type: 'function'
     }
 ];
-function strategy$B(space, network, provider, addresses, options, snapshot) {
+function strategy$C(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, queries, response, pps;
         return __generator(this, function (_a) {
@@ -3473,7 +3507,7 @@ var tokenAbi$1 = [
         type: 'function'
     }
 ];
-function strategy$C(_space, network, provider, addresses, options, snapshot) {
+function strategy$D(_space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, res, ghstQuickTotalSupply, ghstQuickTokenBalanceInUni, ghstQuickTokensPerUni, ghstUsdcTotalSupply, ghstUsdcTokenBalanceInUni, ghstUsdcTokensPerUni, response;
         return __generator(this, function (_a) {
@@ -3544,7 +3578,7 @@ var abi$d = [
         type: 'function'
     }
 ];
-function strategy$D(space, network, provider, addresses, options, snapshot) {
+function strategy$E(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response, misPerLP, lpBalances, stakedLpBalances, tokenBalances, boardroomBalances;
         return __generator(this, function (_a) {
@@ -3655,7 +3689,7 @@ var abi$e = [
         type: 'function'
     }
 ];
-function strategy$E(space, network, provider, addresses, options, snapshot) {
+function strategy$F(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, multi, result, dittoPerLP, autofarmBalance, cafeswapBalance, pricePerFullShare;
         return __generator(this, function (_a) {
@@ -3759,7 +3793,7 @@ var contractAbi = [
 function bn(num) {
     return bignumber.BigNumber.from(num.toString());
 }
-function strategy$F(_space, network, provider, addresses, options, snapshot) {
+function strategy$G(_space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, res, totalBPTsInBPool, totalTokensInBPool, tokensPerBPT, userTokensFromBPTList, userEarnedTokensList, sumList;
         return __generator(this, function (_a) {
@@ -3806,7 +3840,7 @@ function strategy$F(_space, network, provider, addresses, options, snapshot) {
 var SUSHISWAP_SUBGRAPH_URL = {
     '1': 'https://api.thegraph.com/subgraphs/name/sushiswap/exchange'
 };
-function strategy$G(_space, network, _provider, addresses, options, snapshot) {
+function strategy$H(_space, network, _provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var params, tokenAddress, result, score;
         return __generator(this, function (_a) {
@@ -3884,7 +3918,7 @@ var MASTERCHEF_SUBGRAPH_URL = {
 var SUSHISWAP_SUBGRAPH_URL$1 = {
     '1': 'https://api.thegraph.com/subgraphs/name/sushiswap/exchange'
 };
-function strategy$H(_space, network, _provider, addresses, options, snapshot) {
+function strategy$I(_space, network, _provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var tokenAddress, sushiPools0Params, sushiPools1Params, sushiPools0Result, sushiPools1Result, allSushiPools, pools, masterchefParams, masterchefResult, one_gwei, stakedBalances, score, pair_1, token0perUni_1, token1perUni_1;
         return __generator(this, function (_a) {
@@ -4084,7 +4118,7 @@ var abi$f = [
         type: 'function'
     }
 ];
-function strategy$I(space, network, provider, addresses, options, snapshot) {
+function strategy$J(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, multi, result, parseRes;
         return __generator(this, function (_a) {
@@ -4124,7 +4158,7 @@ function strategy$I(space, network, provider, addresses, options, snapshot) {
 var KEEP_SUBGRAPH_URL = {
     '1': 'https://api.thegraph.com/subgraphs/name/miracle2k/all-the-keeps'
 };
-function strategy$J(_space, network, _provider, addresses, _options, snapshot) {
+function strategy$K(_space, network, _provider, addresses, _options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var params, result, score;
         return __generator(this, function (_a) {
@@ -4194,7 +4228,7 @@ var abi$g = [
         type: 'function'
     }
 ];
-function strategy$K(space, network, provider, addresses, options, snapshot) {
+function strategy$L(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, multi, result, phoonPerMicLP, phoonPerUsdtLP;
         return __generator(this, function (_a) {
@@ -4243,7 +4277,7 @@ function strategy$K(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$L(space, network, provider, addresses, options, snapshot) {
+function strategy$M(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var delegations, scores;
         return __generator(this, function (_a) {
@@ -4269,10 +4303,10 @@ function strategy$L(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$M(space, network, provider, addresses, options, snapshot) {
+function strategy$N(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            return [2 /*return*/, Object.fromEntries(addresses.map(function (address) { return [address, 1]; }))];
+            return [2 /*return*/, Object.fromEntries(addresses.map(function (address) { return [address, options.value || 1]; }))];
         });
     });
 }
@@ -4293,7 +4327,7 @@ var abi$h = [
         type: 'function'
     }
 ];
-function strategy$N(space, network, provider, addresses, options, snapshot) {
+function strategy$O(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, multi, result;
         return __generator(this, function (_a) {
@@ -4322,7 +4356,7 @@ function strategy$N(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$O(space, network, provider, addresses, options, snapshot) {
+function strategy$P(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var score;
         return __generator(this, function (_a) {
@@ -4377,7 +4411,7 @@ var chunk$2 = function (arr, size) {
         return arr.slice(i * size, i * size + size);
     });
 };
-function strategy$P(space, network, provider, addresses, options, snapshot) {
+function strategy$Q(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, opiumQuery, wOpiumQuery, lp1inchOpiumEthQuery, farmingLp1inchOpiumEthQuery, response, opiumLp1inchOpiumEth, opiumLp1inchOpiumEthTotalSupply, responseClean, chunks, opiumBalances, wOpiumBalances, lp1inchOpiumEthBalances, farmingLp1inchOpiumEthBalances;
         return __generator(this, function (_a) {
@@ -4469,7 +4503,7 @@ function bdToBn(bd, decimals) {
     var bn2 = units.parseUnits(bn, decimals);
     return bn2;
 }
-function strategy$Q(space, network, provider, addresses, options, snapshot) {
+function strategy$R(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var params, graphResults, score, userAddresses, return_score, results, expectedResults_1;
         return __generator(this, function (_a) {
@@ -4925,17 +4959,6 @@ function baseStrategy(_space, network, _provider, addresses, options, snapshot) 
     });
 }
 
-function strategy$R(_space, network, _provider, addresses, _options, snapshot) {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, baseStrategy(_space, network, _provider, addresses, _options, snapshot)];
-                case 1: return [2 /*return*/, _a.sent()];
-            }
-        });
-    });
-}
-
 function strategy$S(_space, network, _provider, addresses, _options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -4958,7 +4981,18 @@ function strategy$T(_space, network, _provider, addresses, _options, snapshot) {
     });
 }
 
-function strategy$U(space, network, provider, addresses, options, snapshot) {
+function strategy$U(_space, network, _provider, addresses, _options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, baseStrategy(_space, network, _provider, addresses, _options, snapshot)];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+
+function strategy$V(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var whitelist;
         return __generator(this, function (_a) {
@@ -5008,7 +5042,7 @@ var abi$j = [
         type: 'function'
     }
 ];
-function strategy$V(space, network, provider, addresses, options, snapshot) {
+function strategy$W(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response, lonPerLPUniswap, lonPerLPSushiSwap, lpBalancesUniswap, lpBalancesUniswapStaking2, lonEarnedBalancesUniswapStaking2, lpBalancesUniswapStaking3, lonEarnedBalancesUniswapStaking3, lpBalancesSushiSwap, lpBalancesSushiSwapStaking2, lonEarnedBalancesSushiSwapStaking2, lpBalancesSushiSwapStaking3, lonEarnedBalancesSushiSwapStaking3, tokenBalances, lonBalanceOfxLON, xLONTotalSupply, xLONBalanceOfUsers;
         return __generator(this, function (_a) {
@@ -5175,7 +5209,7 @@ var abi$k = [
         type: 'function'
     }
 ];
-function strategy$W(space, network, provider, addresses, options, snapshot) {
+function strategy$X(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, multi, result, rebasedPerLP;
         return __generator(this, function (_a) {
@@ -5222,7 +5256,7 @@ function strategy$W(space, network, provider, addresses, options, snapshot) {
 var SUBGRAPH_URL$1 = {
     '1': 'https://api.thegraph.com/subgraphs/name/proofofbeauty/hash'
 };
-function strategy$X(_space, network, provider, addresses, options, snapshot) {
+function strategy$Y(_space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var lowerCasedAddressToOriginalAddressMap, hashOwnersParams, result, scoresMap, scores;
         return __generator(this, function (_a) {
@@ -5292,7 +5326,7 @@ var data_reader_abi = [
         ]
     }
 ];
-function strategy$Y(space, network, provider, addresses, options, snapshot) {
+function strategy$Z(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, totalShares, shares_by_address, _1e18;
         return __generator(this, function (_a) {
@@ -5344,7 +5378,7 @@ var abi$l = [
         type: 'function'
     }
 ];
-function strategy$Z(space, network, provider, addresses, options, snapshot) {
+function strategy$_(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
@@ -5367,12 +5401,12 @@ function strategy$Z(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$_(space, network, provider, addresses, options, snapshot) {
+function strategy$$(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var score;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, strategy$Z(space, network, provider, addresses, options, snapshot)];
+                case 0: return [4 /*yield*/, strategy$_(space, network, provider, addresses, options, snapshot)];
                 case 1:
                     score = _a.sent();
                     return [2 /*return*/, Object.fromEntries(Object.entries(score).map(function (address) { return [address[0], Math.sqrt(address[1])]; }))];
@@ -5404,7 +5438,7 @@ var abi$m = [
         type: 'function'
     }
 ];
-function strategy$$(space, network, provider, addresses, options, snapshot) {
+function strategy$10(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
@@ -5414,9 +5448,8 @@ function strategy$$(space, network, provider, addresses, options, snapshot) {
                     return [4 /*yield*/, multicall(network, provider, abi$m, addresses.map(function (address) { return [
                             options.address,
                             'getCurrentVotes',
-                            [address.toLowerCase()],
-                            { blockTag: blockTag }
-                        ]; }))];
+                            [address.toLowerCase()]
+                        ]; }), { blockTag: blockTag })];
                 case 1:
                     response = _a.sent();
                     return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
@@ -5428,7 +5461,33 @@ function strategy$$(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$10(space, network, provider, addresses, options, snapshot) {
+var abi$n = [
+    'function getCurrentVotes(address account) external view returns (uint256)'
+];
+function strategy$11(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, response;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    return [4 /*yield*/, multicall(network, provider, abi$n, addresses.map(function (address) { return [
+                            options.address,
+                            'getCurrentVotes',
+                            [address.toLowerCase()]
+                        ]; }), { blockTag: blockTag })];
+                case 1:
+                    response = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
+                            addresses[i],
+                            parseFloat(units.formatUnits(value.toString(), options.decimals))
+                        ]; }))];
+            }
+        });
+    });
+}
+
+function strategy$12(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var max, pages, promises, results;
         return __generator(this, function (_a) {
@@ -5530,7 +5589,7 @@ var tokenAbi$2 = [
         type: 'function'
     }
 ];
-function strategy$11(_space, network, provider, addresses, options, snapshot) {
+function strategy$13(_space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, res, totalSupply, tokenBalanceInLP, tokensPerLP, response;
         return __generator(this, function (_a) {
@@ -5566,7 +5625,7 @@ function strategy$11(_space, network, provider, addresses, options, snapshot) {
 /**
  * Any standard xToken with `balanceOf` and `getShareValue` can use this strategy.
  */
-var abi$n = [
+var abi$o = [
     {
         constant: true,
         inputs: [{ internalType: 'address', name: '', type: 'address' }],
@@ -5584,7 +5643,7 @@ var abi$n = [
         type: 'function'
     }
 ];
-function strategy$12(space, network, provider, addresses, params, snapshot) {
+function strategy$14(space, network, provider, addresses, params, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, balanceCallParams, res, shareValue, balances;
         return __generator(this, function (_a) {
@@ -5596,7 +5655,7 @@ function strategy$12(space, network, provider, addresses, params, snapshot) {
                         'balanceOf',
                         [addr]
                     ]; });
-                    return [4 /*yield*/, multicall(network, provider, abi$n, __spreadArrays([[params.tokenAddress, 'getShareValue']], balanceCallParams), { blockTag: blockTag })];
+                    return [4 /*yield*/, multicall(network, provider, abi$o, __spreadArrays([[params.tokenAddress, 'getShareValue']], balanceCallParams), { blockTag: blockTag })];
                 case 1:
                     res = _a.sent();
                     shareValue = res[0] / 1e18;
@@ -5607,7 +5666,7 @@ function strategy$12(space, network, provider, addresses, params, snapshot) {
     });
 }
 
-var abi$o = [
+var abi$p = [
     {
         inputs: [
             { internalType: 'uint256', name: '', type: 'uint256' },
@@ -5622,14 +5681,14 @@ var abi$o = [
         type: 'function'
     }
 ];
-function strategy$13(space, network, provider, addresses, options, snapshot) {
+function strategy$15(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$o, addresses.map(function (address) { return [
+                    return [4 /*yield*/, multicall(network, provider, abi$p, addresses.map(function (address) { return [
                             options.address,
                             'userInfo',
                             [options.pool, address]
@@ -5749,7 +5808,7 @@ var masterChefAbi$1 = [
         type: 'function'
     }
 ];
-function strategy$14(space, network, provider, addresses, options, snapshot) {
+function strategy$16(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, masterChefMulti, masterChefResult_1, erc20Multi, erc20Result_1, masterChefResult_2;
         return __generator(this, function (_a) {
@@ -5802,7 +5861,7 @@ function strategy$14(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$15(space, network, provider, addresses, options, snapshot) {
+function strategy$17(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         // Given a card and address-tokencount mapping,
         // calculate the weight for this card.
@@ -5948,7 +6007,7 @@ var BIG18$1 = bignumber.BigNumber.from('1000000000000000000');
 var VOTE_BOOST_DIV_1000 = bignumber.BigNumber.from(1000);
 var DECIMALS$2 = 18;
 var QUERIES_PER_DEX_LP_PAIR = 2;
-var abi$p = [
+var abi$q = [
     {
         constant: true,
         inputs: [
@@ -6083,7 +6142,7 @@ var VoteScorer = /** @class */ (function () {
     };
     return VoteScorer;
 }());
-function strategy$16(space, network, provider, addresses, options, snapshot) {
+function strategy$18(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, callQueries, callResponses, holdersQueryBatches, votingScores, callQueryIndex, dexReserveData, voteScorer, emptyVotingScoreCountToAdd, emptyVote, i, addressVotingScore;
         return __generator(this, function (_a) {
@@ -6128,7 +6187,7 @@ function strategy$16(space, network, provider, addresses, options, snapshot) {
                         callQueryIndex = queriesLength;
                         holdersQueryBatches.push(batch);
                     });
-                    return [4 /*yield*/, multicall(network, provider, abi$p, callQueries, {
+                    return [4 /*yield*/, multicall(network, provider, abi$q, callQueries, {
                             blockTag: blockTag
                         })];
                 case 1:
@@ -6221,7 +6280,7 @@ var RENVM_SUBGRAPH_QUERY = {
         operator: true
     }
 };
-function strategy$17(space, network, provider, addresses, options, snapshot) {
+function strategy$19(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var timestamp, nodes, result, scores;
         return __generator(this, function (_a) {
@@ -6283,7 +6342,7 @@ function strategy$17(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-var abi$q = [
+var abi$r = [
     {
         constant: true,
         inputs: [
@@ -6306,14 +6365,14 @@ var abi$q = [
         type: 'function'
     }
 ];
-function strategy$18(space, network, provider, addresses, options, snapshot) {
+function strategy$1a(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$q, addresses.map(function (address) { return [options.address, 'isOwner', [address]]; }), { blockTag: blockTag })];
+                    return [4 /*yield*/, multicall(network, provider, abi$r, addresses.map(function (address) { return [options.address, 'isOwner', [address]]; }), { blockTag: blockTag })];
                 case 1:
                     response = _a.sent();
                     console.log('RES: ', response);
@@ -6323,7 +6382,7 @@ function strategy$18(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-var abi$r = [
+var abi$s = [
     {
         constant: true,
         inputs: [
@@ -6351,14 +6410,14 @@ var abi$r = [
         type: 'function'
     }
 ];
-function strategy$19(space, network, provider, addresses, options, snapshot) {
+function strategy$1b(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$r, addresses.map(function (address) { return [
+                    return [4 /*yield*/, multicall(network, provider, abi$s, addresses.map(function (address) { return [
                             options.address,
                             'balanceOf',
                             [address, options.tokenAddress]
@@ -6454,7 +6513,7 @@ var tokenAbi$3 = [
         type: 'function'
     }
 ];
-function strategy$1a(_space, network, provider, addresses, options, snapshot) {
+function strategy$1c(_space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, res, totalSupply, tokenBalanceInUni, p1, p2, p3, p4;
         return __generator(this, function (_a) {
@@ -6509,7 +6568,7 @@ function strategy$1a(_space, network, provider, addresses, options, snapshot) {
 var SUBGRAPH_URL$2 = {
     '1': 'https://api.thegraph.com/subgraphs/name/alexvorobiov/eip1155subgraph'
 };
-function strategy$1b(_space, network, _provider, addresses, options, snapshot) {
+function strategy$1d(_space, network, _provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var eip1155OwnersParams, result, err_1;
         return __generator(this, function (_a) {
@@ -6563,7 +6622,7 @@ function strategy$1b(_space, network, _provider, addresses, options, snapshot) {
 var UNISWAP_SUBGRAPH_URL$1 = {
     '1': 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2'
 };
-var abi$s = [
+var abi$t = [
     {
         constant: true,
         inputs: [
@@ -6591,7 +6650,7 @@ var abi$s = [
         type: 'function'
     }
 ];
-function strategy$1c(space, network, provider, addresses, options, snapshot) {
+function strategy$1e(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, lpTokenAddress, tokenAddress, rate, params, result, response;
         return __generator(this, function (_a) {
@@ -6630,7 +6689,7 @@ function strategy$1c(space, network, provider, addresses, options, snapshot) {
                                     : +object.reserve1 / +object.totalSupply;
                         }, []);
                     }
-                    return [4 /*yield*/, multicall(network, provider, abi$s, addresses.map(function (address) { return [
+                    return [4 /*yield*/, multicall(network, provider, abi$t, addresses.map(function (address) { return [
                             options.address,
                             'balanceOf',
                             [address, lpTokenAddress]
@@ -6656,7 +6715,7 @@ function strategy$1c(space, network, provider, addresses, options, snapshot) {
  *    - if uniPairAddress is null or undefined, returns staked token balance as is
  * - weight: integer multiplier of the result (for combining strategies with different weights, totally optional)
  */
-var abi$t = [
+var abi$u = [
     // to get a user/pool balance from masterchef
     {
         inputs: [
@@ -6754,27 +6813,32 @@ function arrayChunk(arr, chunkSize) {
 function processValues(values, options) {
     var poolStaked = values[0][0];
     var weight = bignumber.BigNumber.from(options.weight || 1);
+    var weightDecimals = bignumber.BigNumber.from(10).pow(bignumber.BigNumber.from(options.weightDecimals || 0));
     var result;
     if (options.uniPairAddress == null) {
-        result = poolStaked.mul(weight);
+        result = poolStaked.mul(weight).div(weightDecimals);
     }
     else {
         var uniTotalSupply = values[1][0];
         var uniReserve = values[2][0];
         var precision = bignumber.BigNumber.from(10).pow(18);
         var tokensPerLp = uniReserve.mul(precision).div(uniTotalSupply);
-        result = poolStaked.mul(tokensPerLp).mul(weight).div(precision);
+        result = poolStaked
+            .mul(tokensPerLp)
+            .mul(weight)
+            .div(weightDecimals)
+            .div(precision);
     }
     return parseFloat(units.formatUnits(result.toString(), options.decimals || 18));
 }
-function strategy$1d(space, network, provider, addresses, options, snapshot) {
+function strategy$1f(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$t, getCalls(addresses, options), { blockTag: blockTag })];
+                    return [4 /*yield*/, multicall(network, provider, abi$u, getCalls(addresses, options), { blockTag: blockTag })];
                 case 1:
                     response = _a.sent();
                     return [2 /*return*/, Object.fromEntries(
@@ -6878,7 +6942,7 @@ function sumNumbers(arr) {
 function parseVrResponse(response, users) {
     return chunkArray(response, 2 * NUM_NODES).map(sumNumbers);
 }
-function strategy$1e(_space, network, provider, addresses, options, snapshot) {
+function strategy$1g(_space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, avtResponses, avtValues, vrMultiResponse, stakes, vrVotes, scores;
         return __generator(this, function (_a) {
@@ -6910,7 +6974,7 @@ function strategy$1e(_space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$1f(space, network, provider, addresses, options, snapshot) {
+function strategy$1h(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var api_url, response, data;
         return __generator(this, function (_a) {
@@ -6976,7 +7040,7 @@ var seenAbi = [
         type: 'function'
     }
 ];
-function strategy$1g(space, network, provider, addresses, params, snapshot) {
+function strategy$1i(space, network, provider, addresses, params, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, stakingContractSeenBalanceCallParams, seenRes, seenBalanceInStakingContract, xseenBalanceCallParams, xseenRes, totalSupply, balances;
         return __generator(this, function (_a) {
@@ -7005,115 +7069,6 @@ function strategy$1g(space, network, provider, addresses, params, snapshot) {
                     return [2 /*return*/, Object.fromEntries(balances.map(function (balance, i) { return [
                             addresses[i],
                             (balance * (seenBalanceInStakingContract / totalSupply)) / 1e18
-                        ]; }))];
-            }
-        });
-    });
-}
-
-var abi$u = [
-    {
-        inputs: [
-            {
-                internalType: 'address',
-                name: '',
-                type: 'address'
-            }
-        ],
-        name: 'memberAddressByDelegateKey',
-        outputs: [
-            {
-                internalType: 'address',
-                name: '',
-                type: 'address'
-            }
-        ],
-        stateMutability: 'view',
-        type: 'function'
-    },
-    {
-        inputs: [
-            {
-                internalType: 'address',
-                name: '',
-                type: 'address'
-            }
-        ],
-        name: 'members',
-        outputs: [
-            {
-                internalType: 'address',
-                name: 'delegateKey',
-                type: 'address'
-            },
-            {
-                internalType: 'uint256',
-                name: 'shares',
-                type: 'uint256'
-            },
-            {
-                internalType: 'uint256',
-                name: 'loot',
-                type: 'uint256'
-            },
-            {
-                internalType: 'bool',
-                name: 'exists',
-                type: 'bool'
-            },
-            {
-                internalType: 'uint256',
-                name: 'highestIndexYesVote',
-                type: 'uint256'
-            },
-            {
-                internalType: 'uint256',
-                name: 'jailed',
-                type: 'uint256'
-            }
-        ],
-        stateMutability: 'view',
-        type: 'function'
-    },
-    {
-        inputs: [],
-        name: 'totalShares',
-        outputs: [
-            {
-                internalType: 'uint256',
-                name: '',
-                type: 'uint256'
-            }
-        ],
-        stateMutability: 'view',
-        type: 'function'
-    }
-];
-function strategy$1h(space, network, provider, addresses, options, snapshot) {
-    return __awaiter(this, void 0, void 0, function () {
-        var blockTag, memberAddresses, response;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$u, addresses.map(function (address) { return [
-                            options.address,
-                            'memberAddressByDelegateKey',
-                            [address]
-                        ]; }), { blockTag: blockTag })];
-                case 1:
-                    memberAddresses = _a.sent();
-                    return [4 /*yield*/, multicall(network, provider, abi$u, memberAddresses
-                            .filter(function (addr) {
-                            return addr.toString() !== '0x0000000000000000000000000000000000000000';
-                        })
-                            .map(function (addr) { return [options.address, 'members', [addr.toString()]]; }), { blockTag: blockTag })];
-                case 2:
-                    response = _a.sent();
-                    return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
-                            addresses[i],
-                            parseFloat(units.formatUnits(value.shares.toString(), options.decimals)) +
-                                parseFloat(units.formatUnits(value.loot.toString(), options.decimals))
                         ]; }))];
             }
         });
@@ -7198,7 +7153,7 @@ var abi$v = [
         type: 'function'
     }
 ];
-function strategy$1i(space, network, provider, addresses, options, snapshot) {
+function strategy$1j(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, memberAddresses, response;
         return __generator(this, function (_a) {
@@ -7221,6 +7176,115 @@ function strategy$1i(space, network, provider, addresses, options, snapshot) {
                     response = _a.sent();
                     return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
                             addresses[i],
+                            parseFloat(units.formatUnits(value.shares.toString(), options.decimals)) +
+                                parseFloat(units.formatUnits(value.loot.toString(), options.decimals))
+                        ]; }))];
+            }
+        });
+    });
+}
+
+var abi$w = [
+    {
+        inputs: [
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        name: 'memberAddressByDelegateKey',
+        outputs: [
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    },
+    {
+        inputs: [
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        name: 'members',
+        outputs: [
+            {
+                internalType: 'address',
+                name: 'delegateKey',
+                type: 'address'
+            },
+            {
+                internalType: 'uint256',
+                name: 'shares',
+                type: 'uint256'
+            },
+            {
+                internalType: 'uint256',
+                name: 'loot',
+                type: 'uint256'
+            },
+            {
+                internalType: 'bool',
+                name: 'exists',
+                type: 'bool'
+            },
+            {
+                internalType: 'uint256',
+                name: 'highestIndexYesVote',
+                type: 'uint256'
+            },
+            {
+                internalType: 'uint256',
+                name: 'jailed',
+                type: 'uint256'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    },
+    {
+        inputs: [],
+        name: 'totalShares',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    }
+];
+function strategy$1k(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, memberAddresses, response;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    return [4 /*yield*/, multicall(network, provider, abi$w, addresses.map(function (address) { return [
+                            options.address,
+                            'memberAddressByDelegateKey',
+                            [address]
+                        ]; }), { blockTag: blockTag })];
+                case 1:
+                    memberAddresses = _a.sent();
+                    return [4 /*yield*/, multicall(network, provider, abi$w, memberAddresses
+                            .filter(function (addr) {
+                            return addr.toString() !== '0x0000000000000000000000000000000000000000';
+                        })
+                            .map(function (addr) { return [options.address, 'members', [addr.toString()]]; }), { blockTag: blockTag })];
+                case 2:
+                    response = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
+                            addresses[i],
                             parseFloat(units.formatUnits(value.loot.toString(), options.decimals))
                         ]; }))];
             }
@@ -7228,7 +7292,7 @@ function strategy$1i(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-function strategy$1j(space, network, provider, addresses, options, snapshot) {
+function strategy$1l(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -7241,10 +7305,10 @@ function strategy$1j(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-var abi$w = [
+var abi$x = [
     'function balanceOf(address account) external view returns (uint256)'
 ];
-function strategy$1k(space, network, provider, addresses, options, snapshot) {
+function strategy$1m(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var multipler, blockTag, response;
         return __generator(this, function (_a) {
@@ -7252,7 +7316,7 @@ function strategy$1k(space, network, provider, addresses, options, snapshot) {
                 case 0:
                     multipler = options.multiplier || 1;
                     blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$w, addresses.map(function (address) { return [options.address, 'balanceOf', [address]]; }), { blockTag: blockTag })];
+                    return [4 /*yield*/, multicall(network, provider, abi$x, addresses.map(function (address) { return [options.address, 'balanceOf', [address]]; }), { blockTag: blockTag })];
                 case 1:
                     response = _a.sent();
                     return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
@@ -7328,6 +7392,7 @@ var tokenAndPoolAbi = [
 ];
 var XDAI_BLOCK_SUBGRAPH_URL = 'https://api.thegraph.com/subgraphs/name/1hive/xdai-blocks';
 var HOPR_XDAI_SUBGRAPH_URL = 'https://api.thegraph.com/subgraphs/name/hoprnet/hopr-on-xdai';
+var LIMIT = 1000; // 1000 addresses per query in Subgraph
 function getXdaiBlockNumber$1(timestamp) {
     return __awaiter(this, void 0, void 0, function () {
         var query, data;
@@ -7365,7 +7430,7 @@ function xHoprSubgraphQuery(addresses, blockNumber) {
                     query = {
                         accounts: {
                             __args: {
-                                first: 1000,
+                                first: LIMIT,
                                 block: {
                                     number: blockNumber
                                 },
@@ -7386,9 +7451,9 @@ function xHoprSubgraphQuery(addresses, blockNumber) {
         });
     });
 }
-function strategy$1l(space, network, provider, addresses, options, snapshot) {
+function strategy$1n(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
-        var blockTag, _a, res, block, hoprBalanceOfPool, poolTotalSupply, response, snapshotXdaiBlock, hoprOnXdaiBalance, hoprOnXdaiScore;
+        var blockTag, _a, res, block, hoprBalanceOfPool, poolTotalSupply, response, snapshotXdaiBlock, addressSubsets, returnedFromSubgraph, hoprOnXdaiBalance, hoprOnXdaiScore;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -7426,9 +7491,13 @@ function strategy$1l(space, network, provider, addresses, options, snapshot) {
                     return [4 /*yield*/, getXdaiBlockNumber$1(block.timestamp)];
                 case 2:
                     snapshotXdaiBlock = _b.sent();
-                    return [4 /*yield*/, xHoprSubgraphQuery(addresses, snapshotXdaiBlock)];
+                    addressSubsets = Array.apply(null, Array(Math.ceil(addresses.length / LIMIT))).map(function (_e, i) { return addresses.slice(i * LIMIT, (i + 1) * LIMIT); });
+                    return [4 /*yield*/, Promise.all(addressSubsets.map(function (subset) {
+                            return xHoprSubgraphQuery(subset, snapshotXdaiBlock);
+                        }))];
                 case 3:
-                    hoprOnXdaiBalance = _b.sent();
+                    returnedFromSubgraph = _b.sent();
+                    hoprOnXdaiBalance = Object.assign.apply(Object, __spreadArrays([{}], returnedFromSubgraph));
                     hoprOnXdaiScore = addresses.map(function (address) { var _a; return (_a = hoprOnXdaiBalance[address.toLowerCase()]) !== null && _a !== void 0 ? _a : 0; });
                     return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
                             addresses[i],
@@ -7439,17 +7508,17 @@ function strategy$1l(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-var abi$x = [
+var abi$y = [
     'function balanceOf(address account) external view returns (uint256)'
 ];
-function strategy$1m(space, network, provider, addresses, options, snapshot) {
+function strategy$1o(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$x, addresses.map(function (address) { return [options.address, 'balanceOf', [address]]; }), { blockTag: blockTag })];
+                    return [4 /*yield*/, multicall(network, provider, abi$y, addresses.map(function (address) { return [options.address, 'balanceOf', [address]]; }), { blockTag: blockTag })];
                 case 1:
                     response = _a.sent();
                     return [2 /*return*/, Object.fromEntries(response.map(function (value, i) { return [
@@ -7539,7 +7608,7 @@ var chef2Address = '0x062D9b9a97B4eFC67D286e99618dA87C614B166F';
 var lpPairAddress = '0x52307F4C5CeBB1f157c3947D335B999091bAa3F7';
 var decimals = 18;
 var precision = bignumber.BigNumber.from(10).pow(18);
-function strategy$1n(space, network, provider, addresses, options, snapshot) {
+function strategy$1p(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, userInfoPool1, userInfoPool2, lpSupply, lpReserves;
         return __generator(this, function (_a) {
@@ -7579,7 +7648,7 @@ function strategy$1n(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-var abi$y = [
+var abi$z = [
     {
         constant: true,
         inputs: [
@@ -7658,7 +7727,7 @@ var abi$y = [
         type: 'function'
     }
 ];
-function strategy$1o(space, network, provider, addresses, options, snapshot) {
+function strategy$1q(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, queries, addressCount, response, ctrlOwned, ctrlStaked, ctrlEarned;
         return __generator(this, function (_a) {
@@ -7676,7 +7745,7 @@ function strategy$1o(space, network, provider, addresses, options, snapshot) {
                     addresses.forEach(function (address) {
                         queries.push([options.boardroom, 'earned', [address]]);
                     });
-                    return [4 /*yield*/, multicall(network, provider, abi$y, queries, { blockTag: blockTag })];
+                    return [4 /*yield*/, multicall(network, provider, abi$z, queries, { blockTag: blockTag })];
                 case 1:
                     response = _a.sent();
                     ctrlOwned = response.slice(0, addressCount);
@@ -7703,7 +7772,7 @@ var DECENTRALAND_MARKETPLACE_SUBGRAPH_URL = {
     '1': 'https://api.thegraph.com/subgraphs/name/decentraland/marketplace',
     '3': 'https://api.thegraph.com/subgraphs/name/decentraland/marketplaceropsten'
 };
-function strategy$1p(space, network, provider, addresses, options, snapshot) {
+function strategy$1r(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var multipler, blockNumber, _a, params, score, hasNext, result, nfts, _i, nfts_1, estate, userAddress;
         return __generator(this, function (_b) {
@@ -7763,17 +7832,92 @@ function strategy$1p(space, network, provider, addresses, options, snapshot) {
     });
 }
 
-var abi$z = [
+var testNetUrl = 'https://testnet.iotexscout.io/apiproxy';
+var mainNetUrl = 'https://iotexscout.io/apiproxy';
+function getUrl(network) {
+    return network == 4689 ? mainNetUrl : testNetUrl;
+}
+function strategy$1s(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, apiUrl, response, ret;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    if (blockTag == 'latest')
+                        return [2 /*return*/, strategy$c(space, network, provider, addresses, options, snapshot)];
+                    apiUrl = getUrl(network);
+                    return [4 /*yield*/, fetch__default['default'](apiUrl + "/api.AccountService.GetIotexBalanceByHeight", {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                address: addresses,
+                                height: snapshot
+                            })
+                        })];
+                case 1:
+                    response = _a.sent();
+                    return [4 /*yield*/, response.json()];
+                case 2:
+                    ret = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(ret.balance.map(function (v, i) { return [addresses[i], parseFloat(v)]; }))];
+            }
+        });
+    });
+}
+
+var testNetUrl$1 = 'https://testnet.iotexscout.io/apiproxy';
+var mainNetUrl$1 = 'https://iotexscout.io/apiproxy';
+function getUrl$1(network) {
+    return network == 4689 ? mainNetUrl$1 : testNetUrl$1;
+}
+function strategy$1t(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, apiUrl, response, ret;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    if (blockTag == 'latest')
+                        return [2 /*return*/, strategy$4(space, network, provider, addresses, options, snapshot)];
+                    apiUrl = getUrl$1(network);
+                    return [4 /*yield*/, fetch__default['default'](apiUrl + "/api.AccountService.GetErc20TokenBalanceByHeight", {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                address: addresses,
+                                height: snapshot,
+                                contract_address: options.address
+                            })
+                        })];
+                case 1:
+                    response = _a.sent();
+                    return [4 /*yield*/, response.json()];
+                case 2:
+                    ret = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(ret.balance.map(function (v, i) { return [addresses[i], parseFloat(v)]; }))];
+            }
+        });
+    });
+}
+
+var abi$A = [
     'function isVerifiedUser(address _user) external view returns (bool)'
 ];
-function strategy$1q(space, network, provider, addresses, options, snapshot) {
+function strategy$1u(space, network, provider, addresses, options, snapshot) {
     return __awaiter(this, void 0, void 0, function () {
         var blockTag, response;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
-                    return [4 /*yield*/, multicall(network, provider, abi$z, addresses.map(function (address) { return [
+                    return [4 /*yield*/, multicall(network, provider, abi$A, addresses.map(function (address) { return [
                             options.registry,
                             'isVerifiedUser',
                             [address]
@@ -7786,12 +7930,457 @@ function strategy$1q(space, network, provider, addresses, options, snapshot) {
     });
 }
 
+var xINV = '0x65b35d6Eb7006e0e607BC54EB2dFD459923476fE';
+var ONE_E18$1 = units.parseUnits('1', 18);
+var abi$B = [
+    'function balanceOf(address account) external view returns (uint256)',
+    'function exchangeRateStored() external view returns (uint256)'
+];
+function strategy$1v(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, exchangeRateResp, exchangeRate, balanceResp;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    return [4 /*yield*/, multicall(network, provider, abi$B, [[xINV, 'exchangeRateStored', []]], { blockTag: blockTag })];
+                case 1:
+                    exchangeRateResp = _a.sent();
+                    exchangeRate = exchangeRateResp[0][0];
+                    return [4 /*yield*/, multicall(network, provider, abi$B, addresses.map(function (address) { return [xINV, 'balanceOf', [address]]; }), { blockTag: blockTag })];
+                case 2:
+                    balanceResp = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(balanceResp.map(function (value, i) { return [
+                            addresses[i],
+                            parseFloat(units.formatUnits(value[0].mul(exchangeRate).div(ONE_E18$1).toString(), options.decimals))
+                        ]; }))];
+            }
+        });
+    });
+}
+
+var MOD_POOL_ADDRESS = '0x3093896c81c8d8b9bf658fbf1aede09207850ca2';
+var abi$C = [
+    {
+        inputs: [
+            {
+                internalType: 'address',
+                name: 'account',
+                type: 'address'
+            }
+        ],
+        name: 'balanceOf',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    }
+];
+var stakingPoolAbi = [
+    {
+        inputs: [
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        name: 'userInfo',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: 'amount',
+                type: 'uint256'
+            },
+            {
+                internalType: 'uint256',
+                name: 'rewardDebt',
+                type: 'uint256'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    }
+];
+function strategy$1w(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, balanceResponse, stakeResponse;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    return [4 /*yield*/, multicall(network, provider, abi$C, addresses.map(function (address) { return [options.address, 'balanceOf', [address]]; }), { blockTag: blockTag })];
+                case 1:
+                    balanceResponse = _a.sent();
+                    return [4 /*yield*/, multicall(network, provider, stakingPoolAbi, addresses.map(function (address) { return [MOD_POOL_ADDRESS, 'userInfo', [address]]; }), { blockTag: blockTag })];
+                case 2:
+                    stakeResponse = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(balanceResponse.map(function (value, i) {
+                            var balance1 = value[0];
+                            var balance2 = stakeResponse[i].amount;
+                            var sum = balance1.add(balance2);
+                            return [
+                                addresses[i],
+                                parseFloat(units.formatUnits(sum.toString(), options.decimals))
+                            ];
+                        }))];
+            }
+        });
+    });
+}
+
+var FARM_ADDRESS = '0x2b2929E785374c651a81A63878Ab22742656DcDd';
+var LP_TOKEN_ADDRESS = '0xEc7178F4C41f346b2721907F5cF7628E388A7a58';
+var BOO_TOKEN_ADDRESS = '0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE';
+var abi$D = [
+    {
+        inputs: [
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        name: 'balanceOf',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: 'amount',
+                type: 'uint256'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    },
+    {
+        inputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256'
+            },
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        name: 'userInfo',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: 'amount',
+                type: 'uint256'
+            },
+            {
+                internalType: 'uint256',
+                name: 'rewardDebt',
+                type: 'uint256'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    },
+    {
+        constant: true,
+        inputs: [],
+        name: 'totalSupply',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256'
+            }
+        ],
+        payable: false,
+        stateMutability: 'view',
+        type: 'function'
+    }
+];
+function strategy$1x(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, multi, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    multi = new Multicaller(network, provider, abi$D, { blockTag: blockTag });
+                    addresses.forEach(function (address) {
+                        multi.call("boo." + address, BOO_TOKEN_ADDRESS, 'balanceOf', [address]);
+                        multi.call("lpInFarm." + address, FARM_ADDRESS, 'userInfo', ['0', address]);
+                        multi.call("lp." + address, LP_TOKEN_ADDRESS, 'balanceOf', [address]);
+                        options.vaultTokens.forEach(function (token) {
+                            multi.call("vaultTokens." + address + "." + token.address, token.address, 'balanceOf', [address]);
+                        });
+                    });
+                    multi.call("lp.totalSupply", LP_TOKEN_ADDRESS, 'totalSupply', []);
+                    multi.call("lp.boo", BOO_TOKEN_ADDRESS, 'balanceOf', [LP_TOKEN_ADDRESS]);
+                    return [4 /*yield*/, multi.execute()];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, Object.fromEntries(addresses.map(function (address) { return [
+                            address,
+                            parseFloat(units.formatUnits(result.boo[address]
+                                .mul(options.boo.numerator)
+                                .div(options.boo.denominator), 18)) +
+                                parseFloat(units.formatUnits(result.lpInFarm[address]
+                                    .mul(result.lp.boo)
+                                    .div(result.lp.totalSupply)
+                                    .mul(options.lp.numerator)
+                                    .div(options.lp.denominator), 18)) +
+                                parseFloat(units.formatUnits(result.lp[address]
+                                    .mul(result.lp.boo)
+                                    .div(result.lp.totalSupply)
+                                    .mul(options.lp.numerator)
+                                    .div(options.lp.denominator), 18)) +
+                                options.vaultTokens.reduce(function (prev, token, idx) {
+                                    return prev +
+                                        parseFloat(units.formatUnits(result.vaultTokens[address][token.address]
+                                            .mul(options.vaultTokens[idx].numerator)
+                                            .div(options.vaultTokens[idx].denominator), options.vaultTokens[idx].decimal));
+                                }, 0)
+                        ]; }))];
+            }
+        });
+    });
+}
+
+var abi$E = [
+    {
+        constant: true,
+        inputs: [
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        name: 'balanceOf',
+        outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+        payable: false,
+        stateMutability: 'view',
+        type: 'function'
+    },
+    {
+        inputs: [],
+        name: 'getCurrentHaloHaloPrice',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256'
+            }
+        ],
+        stateMutability: 'view',
+        type: 'function'
+    }
+];
+function strategy$1y(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, multi, result, dsrtPrice;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    multi = new Multicaller(network, provider, abi$E, { blockTag: blockTag });
+                    addresses.forEach(function (address) {
+                        multi.call("scores." + address + ".dsrtBalance", options.token, 'balanceOf', [
+                            address
+                        ]);
+                    });
+                    multi.call('dsrtPrice', options.token, 'getCurrentHaloHaloPrice');
+                    return [4 /*yield*/, multi.execute()];
+                case 1:
+                    result = _a.sent();
+                    dsrtPrice = result.dsrtPrice;
+                    return [2 /*return*/, Object.fromEntries(Array(addresses.length)
+                            .fill('')
+                            .map(function (_, i) {
+                            var dsrtBalances = result.scores[addresses[i]].dsrtBalance;
+                            return [
+                                addresses[i],
+                                parseFloat(units.formatUnits(dsrtBalances.mul(dsrtPrice), 36))
+                            ];
+                        }))];
+            }
+        });
+    });
+}
+
+var abi$F = [
+    {
+        constant: true,
+        inputs: [],
+        name: 'getValidatorNum',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256'
+            }
+        ],
+        payable: false,
+        stateMutability: 'view',
+        type: 'function'
+    },
+    {
+        constant: true,
+        inputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256'
+            }
+        ],
+        name: 'validatorSet',
+        outputs: [
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address'
+            }
+        ],
+        payable: false,
+        stateMutability: 'view',
+        type: 'function'
+    },
+    {
+        constant: true,
+        inputs: [
+            {
+                internalType: 'address',
+                name: '_candidateAddr',
+                type: 'address'
+            },
+            {
+                internalType: 'address',
+                name: '_delegatorAddr',
+                type: 'address'
+            }
+        ],
+        name: 'getDelegatorInfo',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: 'delegatedStake',
+                type: 'uint256'
+            },
+            {
+                internalType: 'uint256',
+                name: 'undelegatingStake',
+                type: 'uint256'
+            },
+            {
+                internalType: 'uint256[]',
+                name: 'intentAmounts',
+                type: 'uint256[]'
+            },
+            {
+                internalType: 'uint256[]',
+                name: 'intentProposedTimes',
+                type: 'uint256[]'
+            }
+        ],
+        payable: false,
+        stateMutability: 'view',
+        type: 'function'
+    }
+];
+function strategy$1z(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        var blockTag, validatorNum, validatorAddresses, callInfos, callInfosCopy, batchSize, batches, delegatorInfoResponse, i, _a, _b, delegations, aggregatedDelegations;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    blockTag = typeof snapshot === 'number' ? snapshot : 'latest';
+                    return [4 /*yield*/, multicall(network, provider, abi$F, [[options.dposAddress, 'getValidatorNum', []]], { blockTag: blockTag })];
+                case 1:
+                    validatorNum = (_c.sent())[0][0];
+                    return [4 /*yield*/, multicall(network, provider, abi$F, Array.from(Array(validatorNum.toNumber()).keys()).map(function (index) { return [
+                            options.dposAddress,
+                            'validatorSet',
+                            [index]
+                        ]; }), { blockTag: blockTag })];
+                case 2:
+                    validatorAddresses = (_c.sent()).map(function (value) { return value[0]; });
+                    callInfos = validatorAddresses.reduce(function (infos, validatorAddress, _) {
+                        return infos.concat(addresses.map(function (address) { return [
+                            address,
+                            [options.dposAddress, 'getDelegatorInfo', [validatorAddress, address]]
+                        ]; }));
+                    }, []);
+                    callInfosCopy = __spreadArrays(callInfos);
+                    batchSize = 2000;
+                    batches = new Array(Math.ceil(callInfos.length / batchSize))
+                        .fill(0)
+                        .map(function (_) { return callInfosCopy.splice(0, batchSize); });
+                    delegatorInfoResponse = [];
+                    i = 0;
+                    _c.label = 3;
+                case 3:
+                    if (!(i < batches.length)) return [3 /*break*/, 6];
+                    _b = (_a = delegatorInfoResponse).concat;
+                    return [4 /*yield*/, multicall(network, provider, abi$F, batches[i].map(function (info) { return info[1]; }), { blockTag: blockTag })];
+                case 4:
+                    delegatorInfoResponse = _b.apply(_a, [_c.sent()]);
+                    _c.label = 5;
+                case 5:
+                    i++;
+                    return [3 /*break*/, 3];
+                case 6:
+                    delegations = delegatorInfoResponse.map(function (info, i) { return [
+                        callInfos[i][0],
+                        info.delegatedStake
+                    ]; });
+                    aggregatedDelegations = delegations.reduce(function (aggregates, delegation, _) {
+                        var delegatorAddress = delegation[0];
+                        if (aggregates[delegatorAddress]) {
+                            aggregates[delegatorAddress] = aggregates[delegatorAddress].add(delegation[1]);
+                        }
+                        else {
+                            aggregates[delegatorAddress] = delegation[1];
+                        }
+                        return aggregates;
+                    }, {});
+                    return [2 /*return*/, Object.entries(aggregatedDelegations).reduce(function (transformed, _a, _) {
+                            var delegatorAddress = _a[0], delegatedStake = _a[1];
+                            transformed[delegatorAddress] = parseFloat(units.formatUnits(delegatedStake.toString(), 18));
+                            return transformed;
+                        }, {})];
+            }
+        });
+    });
+}
+
+function strategy$1A(space, network, provider, addresses, options, snapshot) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, strategy$M(space, network, provider, addresses, {
+                        strategies: [
+                            {
+                                name: 'balancer',
+                                params: options
+                            }
+                        ]
+                    }, snapshot)];
+                case 1: return [2 /*return*/, _a.sent()];
+            }
+        });
+    });
+}
+
 var strategies = {
     balancer: strategy,
-    'erc20-received': strategy$u,
+    'erc20-received': strategy$v,
     'contract-call': strategy$1,
-    'eth-received': strategy$t,
-    'eth-philanthropy': strategy$v,
+    'eth-received': strategy$u,
+    'eth-philanthropy': strategy$w,
     'ens-domains-owned': strategy$2,
     'ens-reverse-record': strategy$3,
     'erc20-balance-of': strategy$4,
@@ -7800,83 +8389,93 @@ var strategies = {
     'erc20-balance-of-coeff': strategy$5,
     'erc20-with-balance': strategy$8,
     'erc20-balance-of-delegation': strategy$9,
-    'balance-of-with-min': strategy$a,
-    'eth-balance': strategy$b,
-    'eth-wallet-age': strategy$c,
-    'maker-ds-chief': strategy$e,
-    erc721: strategy$1m,
-    'erc721-enumerable': strategy$1j,
-    'erc721-with-multiplier': strategy$1k,
-    'erc1155-balance-of': strategy$Z,
-    'erc1155-balance-of-cv': strategy$_,
-    multichain: strategy$d,
-    uni: strategy$f,
-    'frax-finance': strategy$h,
-    'yearn-vault': strategy$g,
-    moloch: strategy$i,
-    masterchef: strategy$H,
-    sushiswap: strategy$G,
-    uniswap: strategy$j,
-    flashstake: strategy$k,
-    pancake: strategy$l,
-    synthetix: strategy$m,
-    ctoken: strategy$n,
-    cream: strategy$o,
-    'staked-uniswap': strategy$r,
-    esd: strategy$p,
-    'esd-delegation': strategy$q,
-    piedao: strategy$s,
-    'xdai-easy-staking': strategy$w,
-    'xdai-posdao-staking': strategy$y,
-    'xdai-stake-holders': strategy$z,
-    'xdai-stake-delegation': strategy$A,
-    defidollar: strategy$B,
-    aavegotchi: strategy$C,
-    mithcash: strategy$D,
-    stablexswap: strategy$I,
-    dittomoney: strategy$E,
-    'staked-keep': strategy$J,
-    'balancer-unipool': strategy$F,
-    typhoon: strategy$K,
-    delegation: strategy$L,
-    ticket: strategy$M,
-    work: strategy$N,
-    'ticket-validity': strategy$O,
-    opium: strategy$P,
-    'ocean-marketplace': strategy$Q,
-    'the-graph-balance': strategy$R,
-    'the-graph-delegation': strategy$S,
-    'the-graph-indexing': strategy$T,
-    whitelist: strategy$U,
-    tokenlon: strategy$V,
-    rebased: strategy$W,
-    'pob-hash': strategy$X,
-    'total-axion-shares': strategy$Y,
-    'comp-like-votes': strategy$$,
-    pagination: strategy$10,
-    'ruler-staked-lp': strategy$11,
-    xcover: strategy$12,
-    'niu-staked': strategy$13,
-    mushrooms: strategy$14,
-    'curio-cards-erc20-weighted': strategy$15,
-    'ren-nodes': strategy$17,
-    'multisig-owners': strategy$18,
-    'tranche-staking': strategy$19,
-    pepemon: strategy$1a,
-    'erc1155-all-balances-of': strategy$1b,
-    'saffron-finance': strategy$16,
-    'tranche-staking-lp': strategy$1c,
-    'masterchef-pool-balance': strategy$1d,
-    'avn-balance-of-staked': strategy$1e,
-    api: strategy$1f,
-    xseen: strategy$1g,
-    'moloch-all': strategy$1h,
-    'moloch-loot': strategy$1i,
-    'hopr-uni-lp-farm': strategy$1l,
-    apescape: strategy$1n,
-    liftkitchen: strategy$1o,
-    'decentraland-estate-size': strategy$1p,
-    brightid: strategy$1q
+    'erc20-price': strategy$a,
+    'balance-of-with-min': strategy$b,
+    'eth-balance': strategy$c,
+    'eth-wallet-age': strategy$d,
+    'maker-ds-chief': strategy$f,
+    erc721: strategy$1o,
+    'erc721-enumerable': strategy$1l,
+    'erc721-with-multiplier': strategy$1m,
+    'erc1155-balance-of': strategy$_,
+    'erc1155-balance-of-cv': strategy$$,
+    multichain: strategy$e,
+    uni: strategy$g,
+    'frax-finance': strategy$i,
+    'yearn-vault': strategy$h,
+    moloch: strategy$j,
+    masterchef: strategy$I,
+    sushiswap: strategy$H,
+    uniswap: strategy$k,
+    flashstake: strategy$l,
+    pancake: strategy$m,
+    synthetix: strategy$n,
+    ctoken: strategy$o,
+    cream: strategy$p,
+    'staked-uniswap': strategy$s,
+    esd: strategy$q,
+    'esd-delegation': strategy$r,
+    piedao: strategy$t,
+    'xdai-easy-staking': strategy$x,
+    'xdai-posdao-staking': strategy$z,
+    'xdai-stake-holders': strategy$A,
+    'xdai-stake-delegation': strategy$B,
+    defidollar: strategy$C,
+    aavegotchi: strategy$D,
+    mithcash: strategy$E,
+    stablexswap: strategy$J,
+    dittomoney: strategy$F,
+    'staked-keep': strategy$K,
+    'balancer-unipool': strategy$G,
+    typhoon: strategy$L,
+    delegation: strategy$M,
+    ticket: strategy$N,
+    work: strategy$O,
+    'ticket-validity': strategy$P,
+    opium: strategy$Q,
+    'ocean-marketplace': strategy$R,
+    'the-graph-balance': strategy$S,
+    'the-graph-delegation': strategy$T,
+    'the-graph-indexing': strategy$U,
+    whitelist: strategy$V,
+    tokenlon: strategy$W,
+    rebased: strategy$X,
+    'pob-hash': strategy$Y,
+    'total-axion-shares': strategy$Z,
+    'comp-like-votes': strategy$10,
+    'governor-alpha': strategy$11,
+    pagination: strategy$12,
+    'ruler-staked-lp': strategy$13,
+    xcover: strategy$14,
+    'niu-staked': strategy$15,
+    mushrooms: strategy$16,
+    'curio-cards-erc20-weighted': strategy$17,
+    'ren-nodes': strategy$19,
+    'multisig-owners': strategy$1a,
+    'tranche-staking': strategy$1b,
+    pepemon: strategy$1c,
+    'erc1155-all-balances-of': strategy$1d,
+    'saffron-finance': strategy$18,
+    'tranche-staking-lp': strategy$1e,
+    'masterchef-pool-balance': strategy$1f,
+    'avn-balance-of-staked': strategy$1g,
+    api: strategy$1h,
+    xseen: strategy$1i,
+    'moloch-all': strategy$1j,
+    'moloch-loot': strategy$1k,
+    'hopr-uni-lp-farm': strategy$1n,
+    apescape: strategy$1p,
+    liftkitchen: strategy$1q,
+    'decentraland-estate-size': strategy$1r,
+    brightid: strategy$1u,
+    'inverse-xinv': strategy$1v,
+    modefi: strategy$1w,
+    'iotex-balance': strategy$1s,
+    'xrc20-balance-of': strategy$1t,
+    spookyswap: strategy$1x,
+    'rnbw-balance': strategy$1y,
+    'celer-sgn-delegation': strategy$1z,
+    'balancer-delegation': strategy$1A
 };
 
 var supportedCodecs = ['ipns-ns', 'ipfs-ns', 'swarm-ns', 'onion', 'onion3'];
@@ -8091,6 +8690,7 @@ var MULTICALL = {
     '100': '0xb5b692a88bdfc81ca69dcb1d924f59f0413a602a',
     '128': '0x37ab26db3df780e7026f3e767f65efb739f48d8e',
     '137': '0xCBca837161be50EfA5925bB9Cc77406468e76751',
+    '246': '0x0767F26d0D568aB61A98b279C0b28a4164A6f05e',
     '256': '0xC33994Eb943c61a8a59a918E2de65e03e4e385E0',
     '1287': '0xD7bA481DE7fB53A7a29641c43232B09e5D9CAe7b',
     '1337': '0x566131e85d46cc7BBd0ce5C6587E9912Dc27cDAc',
@@ -8098,6 +8698,9 @@ var MULTICALL = {
     wanchain: '0xba5934ab3056fca1fa458d30fbb3810c3eb5145f',
     '250': '0x7f6A10218264a22B4309F3896745687E712962a0',
     '499': '0x7955FF653FfDBf13056FeAe227f655CfF5C194D5',
+    '42220': '0xb8d0d2C1391eeB350d2Cd39EfABBaaEC297368D9',
+    '4689': '0x9c8B105c94282CDB0F3ecF27e3cfA96A35c07be6',
+    '4690': '0x30aE8783d26aBE7Fbb9d83549CCb7430AE4A301F',
     '1666600000': '0x9c31392D2e0229dC4Aa250F043d46B9E82074BF8',
     '1666700000': '0x9923589503Fd205feE3d367DDFF2378f0F7dD2d4'
 };
@@ -8134,7 +8737,7 @@ function multicall(network, provider, abi$1, calls, options) {
             switch (_b.label) {
                 case 0:
                     multi = new contracts.Contract(MULTICALL[network], abi, provider);
-                    itf = new abi$A.Interface(abi$1);
+                    itf = new abi$G.Interface(abi$1);
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 3, , 4]);
@@ -9226,14 +9829,25 @@ var ModuleAbi = [
     'function executeProposalWithIndex(string proposalId, bytes32[] txHashes, address to, uint256 value, bytes data, uint8 operation, uint256 txIndex)'
 ];
 var OracleAbi = [
+    // Events
+    "event LogNewAnswer(\n    bytes32 answer,\n    bytes32 indexed question_id,\n    bytes32 history_hash,\n    address indexed user,\n    uint256 bond,\n    uint256 ts,\n    bool is_commitment\n  )",
     // Read functions
     'function resultFor(bytes32 question_id) view returns (bytes32)',
     'function getFinalizeTS(bytes32 question_id) view returns (uint32)',
     'function getBond(bytes32 question_id) view returns (uint256)',
     'function getBestAnswer(bytes32 question_id) view returns (uint32)',
+    'function balanceOf(address) view returns (uint256)',
+    'function getHistoryHash(bytes32 question_id) view returns (bytes32)',
+    'function isFinalized(bytes32 question_id) view returns (bool)',
     // Write functions
-    'function submitAnswer(bytes32 question_id, bytes32 answer, uint256 max_previous) external payable'
+    'function submitAnswer(bytes32 question_id, bytes32 answer, uint256 max_previous) external payable',
+    "function claimMultipleAndWithdrawBalance(\n    bytes32[] question_ids, \n    uint256[] lengths, \n    bytes32[] hist_hashes, \n    address[] addrs, \n    uint256[] bonds, \n    bytes32[] answers\n  ) public",
+    'function withdraw() public'
 ];
+var START_BLOCKS = {
+    1: 6531147,
+    4: 3175028
+};
 var buildQuestion = function (proposalId, txHashes) { return __awaiter(void 0, void 0, void 0, function () {
     var hashesHash;
     return __generator(this, function (_a) {
@@ -9345,7 +9959,7 @@ var Plugin$2 = /** @class */ (function () {
     function Plugin() {
         this.author = 'Gnosis';
         this.version = '1.0.0';
-        this.name = 'Dao Module';
+        this.name = 'SafeSnap';
         this.website = 'https://safe.gnosis.io';
     }
     Plugin.prototype.validateTransaction = function (transaction) {
@@ -9425,6 +10039,15 @@ var Plugin$2 = /** @class */ (function () {
             });
         });
     };
+    Plugin.prototype.getModuleDetails = function (network, moduleAddress) {
+        return __awaiter(this, void 0, void 0, function () {
+            var provider;
+            return __generator(this, function (_a) {
+                provider = getProvider(network);
+                return [2 /*return*/, getModuleDetails(provider, network, moduleAddress)];
+            });
+        });
+    };
     Plugin.prototype.submitProposal = function (web3, moduleAddress, proposalId, transactions) {
         return __awaiter(this, void 0, void 0, function () {
             var txHashes, tx, receipt;
@@ -9440,6 +10063,102 @@ var Plugin$2 = /** @class */ (function () {
                     case 3:
                         receipt = _a.sent();
                         console.log('[DAO module] submitted proposal:', receipt);
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Plugin.prototype.loadClaimBondData = function (web3, network, questionId, oracleAddress) {
+        return __awaiter(this, void 0, void 0, function () {
+            var contract, provider, _a, userBalance, bestAnswer, historyHash, isFinalized, answersFilter, events, users, historyHashes, bonds, answers, alreadyClaimed, address, currentUserAnswers, votedForCorrectQuestion, hasBalance, firstHash;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        contract = new contracts.Contract(oracleAddress, OracleAbi, web3);
+                        provider = getProvider(network);
+                        return [4 /*yield*/, multicall(network, provider, OracleAbi, [
+                                [oracleAddress, 'balanceOf', [web3.provider.selectedAddress]],
+                                [oracleAddress, 'getBestAnswer', [questionId]],
+                                [oracleAddress, 'getHistoryHash', [questionId]],
+                                [oracleAddress, 'isFinalized', [questionId]]
+                            ])];
+                    case 1:
+                        _a = _b.sent(), userBalance = _a[0][0], bestAnswer = _a[1][0], historyHash = _a[2][0], isFinalized = _a[3][0];
+                        answersFilter = contract.filters.LogNewAnswer(null, questionId);
+                        return [4 /*yield*/, contract.queryFilter(answersFilter, START_BLOCKS[network])];
+                    case 2:
+                        events = _b.sent();
+                        users = [];
+                        historyHashes = [];
+                        bonds = [];
+                        answers = [];
+                        // We need to send the information from last to first
+                        events.reverse().forEach(function (_a) {
+                            var args = _a.args;
+                            users.push(args === null || args === void 0 ? void 0 : args.user.toLowerCase());
+                            historyHashes.push(args === null || args === void 0 ? void 0 : args.history_hash);
+                            bonds.push(args === null || args === void 0 ? void 0 : args.bond);
+                            answers.push(args === null || args === void 0 ? void 0 : args.answer);
+                        });
+                        alreadyClaimed = bignumber$1.BigNumber.from(historyHash).eq(0);
+                        address = web3.provider.selectedAddress.toLowerCase();
+                        currentUserAnswers = users.map(function (user, i) {
+                            if (user === address)
+                                return answers[i];
+                        });
+                        votedForCorrectQuestion = currentUserAnswers.some(function (answer) {
+                            if (answer) {
+                                return bignumber$1.BigNumber.from(answer).eq(bestAnswer);
+                            }
+                        }) && isFinalized;
+                        hasBalance = !userBalance.eq(0) && isFinalized;
+                        // Remove the first history and add an empty one
+                        // More info: https://github.com/realitio/realitio-contracts/blob/master/truffle/contracts/Realitio.sol#L502
+                        historyHashes.shift();
+                        firstHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+                        historyHashes.push(firstHash);
+                        return [2 /*return*/, {
+                                canClaim: (!alreadyClaimed && votedForCorrectQuestion) || hasBalance,
+                                data: {
+                                    length: [bonds.length.toString()],
+                                    historyHashes: historyHashes,
+                                    users: users,
+                                    bonds: bonds,
+                                    answers: answers
+                                }
+                            }];
+                }
+            });
+        });
+    };
+    Plugin.prototype.claimBond = function (web3, oracleAddress, questionId, claimParams) {
+        return __awaiter(this, void 0, void 0, function () {
+            var currentHistoryHash, tx_1, receipt_1, tx, receipt;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, call(web3, OracleAbi, [
+                            oracleAddress,
+                            'getHistoryHash',
+                            [questionId]
+                        ])];
+                    case 1:
+                        currentHistoryHash = _a.sent();
+                        if (!bignumber$1.BigNumber.from(currentHistoryHash).eq(0)) return [3 /*break*/, 4];
+                        return [4 /*yield*/, sendTransaction(web3, oracleAddress, OracleAbi, 'withdraw', [])];
+                    case 2:
+                        tx_1 = _a.sent();
+                        return [4 /*yield*/, tx_1.wait()];
+                    case 3:
+                        receipt_1 = _a.sent();
+                        console.log('[Realitio] executed withdraw:', receipt_1);
+                        return [2 /*return*/];
+                    case 4: return [4 /*yield*/, sendTransaction(web3, oracleAddress, OracleAbi, 'claimMultipleAndWithdrawBalance', __spreadArrays([[questionId]], claimParams))];
+                    case 5:
+                        tx = _a.sent();
+                        return [4 /*yield*/, tx.wait()];
+                    case 6:
+                        receipt = _a.sent();
+                        console.log('[Realitio] executed claimMultipleAndWithdrawBalance:', receipt);
                         return [2 /*return*/];
                 }
             });
@@ -9474,9 +10193,9 @@ var Plugin$2 = /** @class */ (function () {
             });
         });
     };
-    Plugin.prototype.voteForQuestion = function (web3, oracleAddress, questionId, minimumBond, answer) {
+    Plugin.prototype.voteForQuestion = function (web3, oracleAddress, questionId, minimumBondInDaoModule, answer) {
         return __awaiter(this, void 0, void 0, function () {
-            var currentBond, bond, tx, receipt;
+            var currentBond, minimumBondIsZero, minimumBond, bond, tx, receipt;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, call(web3, OracleAbi, [
@@ -9486,6 +10205,10 @@ var Plugin$2 = /** @class */ (function () {
                         ])];
                     case 1:
                         currentBond = _a.sent();
+                        minimumBondIsZero = bignumber$1.BigNumber.from(minimumBondInDaoModule).eq(0);
+                        minimumBond = minimumBondIsZero
+                            ? 1000000000000000
+                            : minimumBondInDaoModule;
                         bond = currentBond.eq(bignumber$1.BigNumber.from(0))
                             ? bignumber$1.BigNumber.from(minimumBond)
                             : currentBond.mul(2);
@@ -9561,10 +10284,100 @@ var Plugin$3 = /** @class */ (function () {
     return Plugin;
 }());
 
+// URLS
+var API_BASE_URL = 'https://api.poap.xyz';
+var APP_BASE_URL = 'https://app.poap.xyz';
+var Plugin$4 = /** @class */ (function () {
+    function Plugin() {
+        this.author = 'Poap-xyz';
+        this.version = '1.0.0';
+        this.name = 'Poap Module';
+    }
+    Plugin.prototype.openScanPage = function (address) {
+        window.open(APP_BASE_URL + "/scan/" + address, '_blank');
+    };
+    Plugin.prototype.getCurrentState = function (snapshot, address) {
+        return __awaiter(this, void 0, void 0, function () {
+            var eventResponse, image_url, addressResponse, _a, claimed, status, voted;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, fetch(API_BASE_URL + "/snapshot/proposal/" + snapshot)];
+                    case 1:
+                        eventResponse = _b.sent();
+                        // If the fetch fails: the event doesn't exists for this poap yet
+                        if (!eventResponse.ok) {
+                            return [2 /*return*/, { image_url: '', currentState: 'NO_POAP' }];
+                        }
+                        return [4 /*yield*/, eventResponse.json()];
+                    case 2:
+                        image_url = (_b.sent()).image_url;
+                        // Check that the address is not empty
+                        if (!address) {
+                            return [2 /*return*/, { image_url: image_url, currentState: 'NOT_VOTED' }];
+                        }
+                        return [4 /*yield*/, fetch(API_BASE_URL + "/snapshot/proposal/" + snapshot + "/" + address)];
+                    case 3:
+                        addressResponse = _b.sent();
+                        // If the fetch failed return the NOT_VOTED state
+                        if (!addressResponse.ok) {
+                            return [2 /*return*/, { image_url: image_url, currentState: 'NOT_VOTED' }];
+                        }
+                        return [4 /*yield*/, addressResponse.json()];
+                    case 4:
+                        _a = _b.sent(), claimed = _a.claimed, status = _a.status, voted = _a.voted;
+                        if (claimed) {
+                            // If the address claim the token but the status is not passed
+                            // it means that the token is being minted
+                            if (claimed && status !== 'passed') {
+                                return [2 /*return*/, { image_url: image_url, currentState: 'LOADING' }];
+                            }
+                            // If the status is passed: the token was claimed
+                            return [2 /*return*/, { image_url: image_url, currentState: 'CLAIMED' }];
+                        }
+                        else if (voted) {
+                            // The token is not claimed but the address voted
+                            return [2 /*return*/, { image_url: image_url, currentState: 'UNCLAIMED' }];
+                        }
+                        return [2 /*return*/, { image_url: image_url, currentState: 'NOT_VOTED' }];
+                }
+            });
+        });
+    };
+    Plugin.prototype.claim = function (snapshot, address) {
+        return __awaiter(this, void 0, void 0, function () {
+            var body, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        body = {
+                            snapshotProposalHash: snapshot,
+                            address: address
+                        };
+                        return [4 /*yield*/, fetch(API_BASE_URL + "/claim/snapshot-proposal", {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(body)
+                            })];
+                    case 1:
+                        response = _a.sent();
+                        if (!response.ok) {
+                            // If the response is not ok: return the UNCLAIMED state
+                            console.log(response.json());
+                            return [2 /*return*/, 'UNCLAIMED'];
+                        }
+                        return [2 /*return*/, 'LOADING'];
+                }
+            });
+        });
+    };
+    return Plugin;
+}());
+
 var plugins = {
     aragon: Plugin,
     gnosis: Plugin$1,
-    daoModule: Plugin$2,
+    safeSnap: Plugin$2,
+    poap: Plugin$4,
     quorum: Plugin$3
 };
 
@@ -9767,7 +10580,9 @@ var definitions$1 = {
 				type: "string",
 				"enum": [
 					"single-choice",
-					"approval"
+					"approval",
+					"ranked-choice",
+					"quadratic"
 				]
 			},
 			snapshot: {
